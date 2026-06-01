@@ -157,6 +157,7 @@
       <input type="text" id="invNo" placeholder="e.g. INV-12345">
       <label>Notes</label>
       <textarea id="invNotes" rows="2" placeholder="Optional…"></textarea>
+      <div id="itemsBreakdown" style="display:none"></div>
       <button class="btn" id="saveInvBtn" onclick="saveInvoice()">Save Invoice</button>
     </div>
   </div>
@@ -319,6 +320,8 @@ function clearScan() {
   document.getElementById('previewWrap').style.display = 'none';
   document.getElementById('scanningOverlay').style.display = 'none';
   document.getElementById('aiFilledBadge').style.display = 'none';
+  document.getElementById('itemsBreakdown').style.display = 'none';
+  document.getElementById('itemsBreakdown').innerHTML = '';
   document.getElementById('fileInput').value = '';
 }
 
@@ -337,7 +340,7 @@ async function scanInvoice() {
       },
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 512,
+        max_tokens: 1024,
         messages: [{
           role: 'user',
           content: [
@@ -347,20 +350,25 @@ async function scanInvoice() {
             },
             {
               type: 'text',
-              text: `This is a supplier invoice for a Vietnamese restaurant in New Zealand called Saigon Noon.
-Extract the following and reply ONLY with valid JSON (no markdown, no explanation):
+              text: `This is a supplier invoice for Saigon Noon, a Vietnamese restaurant in New Zealand.
+Extract ALL details and reply ONLY with valid JSON (no markdown, no explanation):
 {
-  "supplier": "name of the supplier company",
-  "date": "YYYY-MM-DD format if visible, else empty string",
-  "total_amount": number (total amount including GST, as a number),
-  "gst_amount": number (GST amount if shown, else total_amount / 11 rounded to 2dp),
-  "invoice_no": "invoice number if shown, else empty string",
-  "items_summary": "brief summary of main items purchased, max 100 chars"
+  "supplier": "full name of the supplier company on the invoice",
+  "date": "YYYY-MM-DD if visible, else empty string",
+  "invoice_no": "invoice or order number if shown, else empty string",
+  "total_amount": number (final total including GST),
+  "gst_amount": number (GST amount — if not shown, calculate as total / 11 rounded to 2dp),
+  "subtotal": number (amount before GST if shown, else null),
+  "items": [
+    { "name": "item description", "qty": number or null, "unit": "kg/each/box/etc or null", "price": number or null }
+  ],
+  "items_summary": "one-line summary of main items, max 120 chars"
 }
 
-Known suppliers for this restaurant: Bid Food, Bid Fresh, Food Services, Service Food, Butchery.
-Match to the closest known supplier if possible.
-If you cannot determine a value with confidence, use null.`
+Known suppliers: Bid Food, Bid Fresh, Food Services, Service Food, Butchery.
+Match supplier to the closest known one if possible.
+Extract EVERY line item visible on the invoice into the items array.
+If a value cannot be determined, use null.`
             }
           ]
         }]
@@ -380,18 +388,43 @@ If you cannot determine a value with confidence, use null.`
       else throw new Error('Could not parse AI response');
     }
 
-    // Fill form
+    // Fill form fields
     if (parsed.date) document.getElementById('invDate').value = parsed.date;
     if (parsed.supplier) {
       const sel = document.getElementById('invSupplier');
       const opts = Array.from(sel.options).map(o => o.value);
       const match = opts.find(o => o.toLowerCase().includes((parsed.supplier||'').toLowerCase().split(' ')[0]));
-      if (match) sel.value = match;
+      sel.value = match || '';
     }
     if (parsed.total_amount) document.getElementById('invAmount').value = parsed.total_amount;
-    if (parsed.gst_amount) document.getElementById('invGST').value = parsed.gst_amount;
-    if (parsed.invoice_no) document.getElementById('invNo').value = parsed.invoice_no;
+    if (parsed.gst_amount)   document.getElementById('invGST').value   = parsed.gst_amount;
+    if (parsed.invoice_no)   document.getElementById('invNo').value    = parsed.invoice_no;
     if (parsed.items_summary) document.getElementById('invNotes').value = parsed.items_summary;
+
+    // Show items breakdown
+    const itemsWrap = document.getElementById('itemsBreakdown');
+    if (parsed.items && parsed.items.length > 0) {
+      const rows = parsed.items.map(it => {
+        const qty  = it.qty  != null ? it.qty + (it.unit ? ' ' + it.unit : '') : '';
+        const price = it.price != null ? '$' + Number(it.price).toFixed(2) : '';
+        return `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f0f0f0;font-size:13px">
+          <span style="color:#444;flex:1">${it.name || '—'}${qty ? ' <span style="color:#bbb;font-size:11px">× '+qty+'</span>' : ''}</span>
+          <span style="font-weight:600;color:#222;margin-left:8px">${price}</span>
+        </div>`;
+      }).join('');
+      itemsWrap.innerHTML = `
+        <div style="margin-top:14px;background:#f8f8f8;border-radius:8px;padding:12px">
+          <div style="font-size:11px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">📦 Items extracted by AI (${parsed.items.length})</div>
+          <div style="font-size:12px;color:#888;margin-bottom:6px">Supplier on invoice: <strong style="color:#333">${parsed.supplier||'unknown'}</strong></div>
+          ${rows}
+          ${parsed.subtotal != null ? `<div style="display:flex;justify-content:space-between;padding:5px 0;font-size:12px;color:#888"><span>Subtotal</span><span>$${Number(parsed.subtotal).toFixed(2)}</span></div>` : ''}
+          ${parsed.gst_amount != null ? `<div style="display:flex;justify-content:space-between;padding:5px 0;font-size:12px;color:#888"><span>GST</span><span>$${Number(parsed.gst_amount).toFixed(2)}</span></div>` : ''}
+          <div style="display:flex;justify-content:space-between;padding:8px 0 0;font-size:14px;font-weight:700;border-top:2px solid #e0e0e0;margin-top:4px"><span>Total</span><span style="color:#c0392b">$${Number(parsed.total_amount||0).toFixed(2)}</span></div>
+        </div>`;
+      itemsWrap.style.display = 'block';
+    } else {
+      itemsWrap.style.display = 'none';
+    }
 
     document.getElementById('scanningOverlay').style.display = 'none';
     document.getElementById('aiFilledBadge').style.display = 'inline-flex';
