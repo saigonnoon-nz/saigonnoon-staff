@@ -97,7 +97,7 @@
 </header>
 
 <div class="tabs">
-  <div class="tab active" onclick="showTab('scan')">📷 Scan Invoice</div>
+  <div class="tab active" onclick="showTab('invoice')">🧾 Invoice</div>
   <div class="tab" onclick="showTab('sales')">💰 Sales</div>
   <div class="tab" onclick="showTab('pl')">📊 P&amp;L</div>
   <div class="tab" onclick="showTab('history')">📋 History</div>
@@ -109,71 +109,55 @@
     <button class="bbtn" id="bRot" onclick="setBranch('Rototuna')">Rototuna</button>
   </div>
 
-  <!-- ── SCAN TAB ── -->
-  <div id="tab-scan">
+  <!-- ── INVOICE TAB ── -->
+  <div id="tab-invoice">
     <div class="card">
-      <h2>📷 AI Invoice Scanner</h2>
-      <div class="ai-badge">Powered by Claude AI</div>
-      <p style="font-size:13px;color:#999;margin-bottom:12px">Take a photo or upload an invoice — AI will extract all details automatically.</p>
-
-      <div id="scanZone" class="scan-zone" onclick="document.getElementById('fileInput').click()" ondragover="onDrag(event,true)" ondragleave="onDrag(event,false)" ondrop="onDrop(event)">
-        <div class="scan-icon">📄</div>
-        <div class="scan-hint">Tap to take photo or upload<br><strong>Supports JPG, PNG, PDF</strong></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <h2 style="margin:0">🧾 Invoice Entry</h2>
+        <button onclick="document.getElementById('fileInput').click()" style="background:#6c3fc5;color:white;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px">
+          📷 Scan
+        </button>
       </div>
-      <input type="file" id="fileInput" accept="image/*,application/pdf" capture="environment" onchange="onFileSelect(event)">
 
-      <div id="previewWrap" style="display:none" class="preview-wrap">
-        <img id="previewImg" src="" alt="Invoice preview">
-        <button class="remove-btn" onclick="clearScan()">×</button>
+      <input type="file" id="fileInput" accept="image/*" capture="environment" onchange="onFileSelect(event)" style="display:none">
+
+      <!-- Scan preview + overlay (hidden by default) -->
+      <div id="previewWrap" style="display:none;position:relative;margin-bottom:12px">
+        <img id="previewImg" src="" alt="Invoice preview" style="width:100%;border-radius:8px;max-height:200px;object-fit:cover">
+        <button onclick="clearScan()" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,.6);color:white;border:none;border-radius:50%;width:26px;height:26px;cursor:pointer;font-size:15px">×</button>
       </div>
 
       <div id="scanningOverlay" class="scanning-overlay" style="display:none">
         <div class="spinner"></div>
         <div style="font-weight:600;margin-bottom:4px">Reading invoice…</div>
-        <div style="font-size:12px;color:#999">Claude AI is extracting details</div>
+        <div style="font-size:12px;color:#999">AI is extracting details</div>
       </div>
 
-      <button class="btn" id="scanBtn" onclick="scanInvoice()" style="display:none">✨ Scan with AI</button>
-    </div>
+      <div id="aiFilledBadge" class="ai-badge" style="display:none;margin-bottom:10px">✨ AI auto-filled — please check</div>
 
-    <div id="invoiceForm" style="display:none">
-      <div class="card">
-        <h2>📝 Invoice Details <span style="font-size:12px;font-weight:400;color:#27ae60">✓ AI filled</span></h2>
-        <label>Date</label>
-        <input type="date" id="invDate">
-        <label>Supplier</label>
-        <select id="invSupplier">
-          <option value="">Select supplier…</option>
-          <option>Bid Food</option>
-          <option>Bid Fresh</option>
-          <option>Food Services</option>
-          <option>Service Food</option>
-          <option>Butchery</option>
-          <option>Supermarket</option>
-          <option>Drinks Supplier</option>
-          <option>Other</option>
-        </select>
-        <label>Total Amount ($)</label>
-        <input type="number" id="invAmount" placeholder="0.00">
-        <label>GST Amount ($)</label>
-        <input type="number" id="invGST" placeholder="0.00">
-        <label>Invoice No.</label>
-        <input type="text" id="invNo" placeholder="e.g. INV-12345">
-        <label>AI Notes</label>
-        <textarea id="invNotes" rows="3" placeholder="Items detected by AI…"></textarea>
-        <button class="btn" id="saveInvBtn" onclick="saveInvoice()">Save Invoice</button>
-        <button class="btn btn-outline" onclick="clearScan()" style="margin-top:8px">Scan Another</button>
-      </div>
-    </div>
-
-    <div class="card" style="background:#fff8e1;border:1px solid #ffe082">
-      <div style="font-size:13px;color:#856404;font-weight:600;margin-bottom:4px">💡 How to use</div>
-      <div style="font-size:12px;color:#856404;line-height:1.6">
-        1. Tap the scan zone above<br>
-        2. Take a photo of the invoice or upload a file<br>
-        3. AI reads the details in seconds<br>
-        4. Check the details and tap Save
-      </div>
+      <label>Date</label>
+      <input type="date" id="invDate">
+      <label>Supplier</label>
+      <select id="invSupplier">
+        <option value="">Select supplier…</option>
+        <option>Bid Food</option>
+        <option>Bid Fresh</option>
+        <option>Food Services</option>
+        <option>Service Food</option>
+        <option>Butchery</option>
+        <option>Supermarket</option>
+        <option>Drinks Supplier</option>
+        <option>Other</option>
+      </select>
+      <label>Total Amount ($)</label>
+      <input type="number" id="invAmount" placeholder="0.00">
+      <label>GST Amount ($)</label>
+      <input type="number" id="invGST" placeholder="0.00">
+      <label>Invoice No.</label>
+      <input type="text" id="invNo" placeholder="e.g. INV-12345">
+      <label>Notes</label>
+      <textarea id="invNotes" rows="2" placeholder="Optional…"></textarea>
+      <button class="btn" id="saveInvBtn" onclick="saveInvoice()">Save Invoice</button>
     </div>
   </div>
 
@@ -256,17 +240,16 @@ function setBranch(b) {
   branch = b;
   document.getElementById('bCBD').classList.toggle('active', b === 'CBD');
   document.getElementById('bRot').classList.toggle('active', b === 'Rototuna');
-  const t = document.querySelector('.tab.active')?.onclick?.toString().match(/'(\w+)'/)?.[1];
-  if (t === 'history') loadHistory();
-  if (t === 'pl') loadPL();
+  if (document.getElementById('tab-history').style.display !== 'none') loadHistory();
+  if (document.getElementById('tab-pl').style.display !== 'none') loadPL();
 }
 
 function showTab(name) {
-  ['scan','sales','pl','history'].forEach(t => {
+  ['invoice','sales','pl','history'].forEach(t => {
     document.getElementById(`tab-${t}`).style.display = t === name ? 'block' : 'none';
   });
   document.querySelectorAll('.tab').forEach((el, i) => {
-    el.classList.toggle('active', ['scan','sales','pl','history'][i] === name);
+    el.classList.toggle('active', ['invoice','sales','pl','history'][i] === name);
   });
   if (name === 'history') loadHistory();
   if (name === 'pl') loadPL();
@@ -325,9 +308,8 @@ function handleFile(file) {
 
     document.getElementById('previewImg').src = dataUrl;
     document.getElementById('previewWrap').style.display = 'block';
-    document.getElementById('scanZone').style.display = 'none';
-    document.getElementById('scanBtn').style.display = 'block';
-    document.getElementById('invoiceForm').style.display = 'none';
+    document.getElementById('aiFilledBadge').style.display = 'none';
+    scanInvoice();
   };
   reader.readAsDataURL(file);
 }
@@ -335,10 +317,8 @@ function handleFile(file) {
 function clearScan() {
   scanImageB64 = null;
   document.getElementById('previewWrap').style.display = 'none';
-  document.getElementById('scanZone').style.display = 'block';
-  document.getElementById('scanBtn').style.display = 'none';
   document.getElementById('scanningOverlay').style.display = 'none';
-  document.getElementById('invoiceForm').style.display = 'none';
+  document.getElementById('aiFilledBadge').style.display = 'none';
   document.getElementById('fileInput').value = '';
 }
 
@@ -414,12 +394,11 @@ If you cannot determine a value with confidence, use null.`
     if (parsed.items_summary) document.getElementById('invNotes').value = parsed.items_summary;
 
     document.getElementById('scanningOverlay').style.display = 'none';
-    document.getElementById('invoiceForm').style.display = 'block';
+    document.getElementById('aiFilledBadge').style.display = 'inline-flex';
     showToast('Invoice scanned ✓');
 
   } catch (e) {
     document.getElementById('scanningOverlay').style.display = 'none';
-    document.getElementById('scanBtn').style.display = 'block';
     showToast('Scan failed: ' + e.message, true);
   }
 }
