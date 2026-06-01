@@ -1,553 +1,570 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Saigon Noon — Staff Portal</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
-  *{box-sizing:border-box;margin:0;padding:0;}
-  body{background:#f7f5f0;font-family:'IBM Plex Sans',sans-serif;}
-  ::-webkit-scrollbar{width:5px;height:5px;}
-  ::-webkit-scrollbar-thumb{background:#c8a96e;border-radius:3px;}
-  .inp{background:#fff;border:1.5px solid #e0d8cc;color:#1a1a0d;padding:10px 14px;font-family:'IBM Plex Sans',sans-serif;font-size:14px;border-radius:8px;width:100%;outline:none;transition:border 0.2s;}
-  .inp:focus{border-color:#c8a96e;box-shadow:0 0 0 3px rgba(200,169,110,0.12);}
-  select.inp{appearance:none;cursor:pointer;}
-  .btn-primary{background:#1a1a0d;color:#c8a96e;border:none;padding:11px 28px;font-family:'IBM Plex Sans',sans-serif;font-size:13px;font-weight:600;border-radius:8px;cursor:pointer;transition:all 0.2s;letter-spacing:0.04em;}
-  .btn-primary:hover{background:#2d2d1a;}
-  .btn-primary:disabled{opacity:0.35;cursor:not-allowed;}
-  .btn-ghost{background:none;border:1.5px solid #e0d8cc;color:#555;padding:9px 20px;font-family:'IBM Plex Sans',sans-serif;font-size:13px;border-radius:8px;cursor:pointer;transition:all 0.2s;}
-  .btn-ghost:hover{border-color:#c8a96e;color:#1a1a0d;}
-  .card{background:#fff;border-radius:12px;padding:24px;box-shadow:0 1px 3px rgba(0,0,0,0.06);}
-  .tab{background:none;border:none;cursor:pointer;padding:10px 20px;font-family:'IBM Plex Sans',sans-serif;font-size:13px;font-weight:500;color:#888;border-bottom:2px solid transparent;transition:all 0.2s;}
-  .tab.active{color:#c8a96e;border-bottom-color:#c8a96e;}
-  .tab:hover{color:#1a1a0d;}
-  .branch-tab{background:none;border:none;cursor:pointer;padding:8px 24px;font-family:'IBM Plex Sans',sans-serif;font-size:13px;font-weight:600;border-radius:6px;transition:all 0.2s;color:#888;}
-  .branch-tab.active{background:#1a1a0d;color:#c8a96e;}
-  .metric{background:#1a1a0d;border-radius:10px;padding:16px 20px;}
-  .table-row{display:grid;padding:10px 0;border-bottom:1px solid #f0ebe0;align-items:center;font-size:13px;}
-  .table-row:last-child{border-bottom:none;}
-  .success-banner{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;padding:12px 16px;border-radius:8px;font-size:13px;font-weight:500;}
-  .section-title{font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:14px;}
-  .pl-grid{display:grid;grid-template-columns:160px repeat(7,1fr) 100px;font-size:12px;font-family:'IBM Plex Mono',monospace;}
-  .pl-cell{padding:7px 6px;text-align:right;border-bottom:1px solid #f0ebe0;}
-  .pl-label{padding:7px 8px;text-align:left;border-bottom:1px solid #f0ebe0;font-family:'IBM Plex Sans',sans-serif;}
-  .pl-head{background:#1a1a0d;color:#c8a96e;font-weight:600;font-size:11px;padding:8px 6px;text-align:right;}
-  .pl-head:first-child{text-align:left;border-radius:8px 0 0 0;}
-  .pl-head:last-child{border-radius:0 8px 0 0;}
-  .pl-net-row .pl-cell,.pl-net-row .pl-label{background:#0f2d0f;color:#4ade80;font-weight:700;}
-  .week-nav{display:flex;align-items:center;gap:12px;}
-  .week-nav button{background:none;border:1px solid #e0d8cc;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:13px;transition:all 0.2s;font-family:'IBM Plex Sans',sans-serif;}
-  .week-nav button:hover{border-color:#c8a96e;}
-  @media(max-width:768px){
-    .pl-grid{grid-template-columns:100px repeat(7,1fr) 80px;font-size:10px;}
-    .pl-cell,.pl-head{padding:5px 3px;}
-  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; color: #333; }
+
+  header { background: #c0392b; color: white; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; }
+  header h1 { font-size: 17px; font-weight: 700; }
+  .conn { font-size: 12px; display: flex; align-items: center; gap: 5px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: #e74c3c; flex-shrink: 0; }
+  .dot.on { background: #2ecc71; }
+
+  .tabs { display: flex; background: white; border-bottom: 2px solid #eee; overflow-x: auto; position: sticky; top: 0; z-index: 10; }
+  .tab { padding: 12px 16px; cursor: pointer; font-size: 13px; font-weight: 600; white-space: nowrap; color: #999; border-bottom: 3px solid transparent; margin-bottom: -2px; }
+  .tab.active { color: #c0392b; border-bottom-color: #c0392b; }
+
+  .content { padding: 14px; max-width: 560px; margin: 0 auto; }
+
+  .branch-toggle { display: flex; gap: 8px; margin-bottom: 14px; }
+  .bbtn { flex: 1; padding: 10px; border: 2px solid #ddd; border-radius: 8px; background: white; cursor: pointer; font-size: 14px; font-weight: 700; color: #999; transition: all .15s; }
+  .bbtn.active { border-color: #c0392b; color: #c0392b; background: #fff5f5; }
+
+  .card { background: white; border-radius: 10px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.07); }
+  .card h2 { font-size: 14px; font-weight: 700; margin-bottom: 12px; }
+
+  label { display: block; font-size: 12px; color: #777; margin: 10px 0 4px; font-weight: 600; text-transform: uppercase; letter-spacing: .3px; }
+  input, select, textarea { width: 100%; padding: 10px 12px; border: 1.5px solid #e0e0e0; border-radius: 7px; font-size: 14px; outline: none; transition: border .15s; background: #fafafa; }
+  input:focus, select:focus, textarea:focus { border-color: #c0392b; background: white; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .btn { display: block; width: 100%; padding: 13px; background: #c0392b; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 12px; transition: background .15s; }
+  .btn:hover { background: #a93226; }
+  .btn:disabled { background: #ccc; cursor: not-allowed; }
+  .btn-outline { background: white; color: #c0392b; border: 2px solid #c0392b; }
+  .btn-outline:hover { background: #fff5f5; }
+
+  /* Invoice scanner */
+  .scan-zone { border: 2px dashed #ddd; border-radius: 10px; padding: 30px 20px; text-align: center; cursor: pointer; transition: border .15s; margin-bottom: 12px; }
+  .scan-zone:hover { border-color: #c0392b; }
+  .scan-zone.dragging { border-color: #c0392b; background: #fff5f5; }
+  .scan-icon { font-size: 40px; margin-bottom: 8px; }
+  .scan-hint { font-size: 13px; color: #999; }
+  .scan-hint strong { color: #c0392b; }
+  #fileInput { display: none; }
+
+  .preview-wrap { position: relative; margin-bottom: 12px; }
+  .preview-wrap img { width: 100%; border-radius: 8px; max-height: 220px; object-fit: cover; }
+  .preview-wrap .remove-btn { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,.6); color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 16px; line-height: 1; }
+
+  .ai-badge { display: inline-flex; align-items: center; gap: 5px; background: #f0e6ff; color: #6c3fc5; border-radius: 20px; padding: 4px 10px; font-size: 12px; font-weight: 600; margin-bottom: 10px; }
+  .ai-badge::before { content: '✨'; }
+
+  .scanning-overlay { background: white; border-radius: 10px; padding: 30px; text-align: center; margin-bottom: 12px; }
+  .spinner { width: 36px; height: 36px; border: 3px solid #eee; border-top-color: #c0392b; border-radius: 50%; animation: spin .8s linear infinite; margin: 0 auto 12px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Sales calc */
+  .calc-row { display: flex; justify-content: space-between; font-size: 13px; padding: 5px 0; border-bottom: 1px solid #f5f5f5; }
+  .calc-row.net { font-weight: 700; font-size: 16px; color: #c0392b; border-top: 2px solid #eee; padding-top: 10px; border-bottom: none; }
+
+  /* History */
+  .hist-item { padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
+  .hist-item:last-child { border-bottom: none; }
+  .hist-meta { font-size: 11px; color: #bbb; margin-top: 3px; }
+  .hist-amt { font-weight: 700; }
+  .loading-msg { text-align: center; padding: 24px; color: #bbb; font-size: 13px; }
+
+  /* P&L */
+  .pl-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; border-bottom: 1px solid #f5f5f5; }
+  .pl-row.hd { font-size: 11px; color: #aaa; text-transform: uppercase; letter-spacing: .4px; padding-top: 12px; border-bottom: none; font-weight: 700; }
+  .pl-row.big { font-size: 15px; font-weight: 700; border-top: 2px solid #eee; padding-top: 10px; }
+  .pct { font-size: 11px; color: #bbb; }
+  .pos { color: #27ae60; }
+  .neg { color: #e74c3c; }
+
+  .bar-wrap { margin-top: 14px; }
+  .bar-lbl { display: flex; justify-content: space-between; font-size: 12px; color: #999; margin-bottom: 3px; }
+  .bar-track { background: #f0f0f0; border-radius: 4px; height: 8px; overflow: hidden; margin-bottom: 8px; }
+  .bar-fill { height: 100%; border-radius: 4px; }
+  .bar-fill.g { background: #27ae60; }
+  .bar-fill.a { background: #f39c12; }
+  .bar-fill.r { background: #e74c3c; }
+
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #27ae60; color: white; padding: 11px 22px; border-radius: 8px; font-size: 14px; font-weight: 600; z-index: 999; display: none; box-shadow: 0 4px 12px rgba(0,0,0,.2); }
+  .toast.err { background: #c0392b; }
 </style>
 </head>
 <body>
-<div id="root"></div>
-<script type="text/babel">
 
-const { useState, useEffect } = React;
+<header>
+  <h1>🍜 Saigon Noon Staff</h1>
+  <div class="conn"><div class="dot" id="dot"></div><span id="connTxt">Connecting…</span></div>
+</header>
 
-// ── helpers ───────────────────────────────────────────────────────────────────
-const todayStr = () => new Date().toISOString().slice(0,10);
-const fmtDate  = (d) => new Date(d+"T12:00:00").toLocaleDateString("en-NZ",{weekday:"short",day:"numeric",month:"short"});
-const fmt = (n) => new Intl.NumberFormat("en-NZ",{style:"currency",currency:"NZD",maximumFractionDigits:2}).format(n||0);
-const pct = (a,b) => b ? ((a/b)*100).toFixed(1)+"%" : "—";
+<div class="tabs">
+  <div class="tab active" onclick="showTab('scan')">📷 Scan Invoice</div>
+  <div class="tab" onclick="showTab('sales')">💰 Sales</div>
+  <div class="tab" onclick="showTab('pl')">📊 P&amp;L</div>
+  <div class="tab" onclick="showTab('history')">📋 History</div>
+</div>
 
-const calcNet = (f) => {
-  const inhouse=Number(f.inhouse||0), uber=Number(f.uber||0);
-  const doordash=Number(f.doordash||0), booknorders=Number(f.booknorders||0);
-  const grossTotal=inhouse+uber+doordash+booknorders;
-  const uberComm=uber*0.30, doordashComm=doordash*0.27, totalComm=uberComm+doordashComm;
-  return {inhouse,uber,doordash,booknorders,grossTotal,uberComm,doordashComm,totalComm,netTotal:grossTotal-totalComm};
-};
+<div class="content">
+  <div class="branch-toggle">
+    <button class="bbtn active" id="bCBD" onclick="setBranch('CBD')">CBD</button>
+    <button class="bbtn" id="bRot" onclick="setBranch('Rototuna')">Rototuna</button>
+  </div>
 
-const getWeekDates = (dateStr) => {
-  const d=new Date(dateStr), day=d.getDay();
-  const mon=new Date(d); mon.setDate(d.getDate()-(day===0?6:day-1));
-  return Array.from({length:7},(_,i)=>{const x=new Date(mon);x.setDate(mon.getDate()+i);return x.toISOString().slice(0,10);});
-};
-const weekOf = (d) => getWeekDates(d)[0];
+  <!-- ── SCAN TAB ── -->
+  <div id="tab-scan">
+    <div class="card">
+      <h2>📷 AI Invoice Scanner</h2>
+      <div class="ai-badge">Powered by Claude AI</div>
+      <p style="font-size:13px;color:#999;margin-bottom:12px">Take a photo or upload an invoice — AI will extract all details automatically.</p>
 
-// ── constants ─────────────────────────────────────────────────────────────────
-const BRANCHES = ["CBD","Rototuna"];
-const ROSTERS = {
-  CBD:      { alimi:[150,250,250,160,160,150,0], lucy:[0,200,200,0,0,0,0], melly:[0,250,250,250,250,250,0], erik:[0,250,250,250,250,0,0], marie:[150,0,0,120,120,170,0], naomi:[210,0,0,0,150,150,0], linh:[0,0,0,90,90,90,0] },
-  Rototuna: { giang:[0,200,200,225,225,225,0], alimi:[225,0,0,0,0,0,225], david:[225,200,200,0,225,225,0], jenny:[0,0,0,0,0,0,0], melly:[0,0,0,200,125,0,200], valerie:[0,0,100,0,100,125,125], henry:[0,0,0,100,0,0,0], cora:[100,100,0,0,0,125,100] },
-};
-const FIXED = { CBD:[415,415,415,415,415,415,315], Rototuna:[513,513,513,513,513,513,513] };
-const SUPPLIERS = {
-  CBD:      ["Bid Food","Bid Fresh","Food Services","Butchery","Drinks & Beverages","Supermarket","Other"],
-  Rototuna: ["Bid Food","Bid Fresh","Service Food","Butchery","Drinks & Beverages","Supermarket","Other"],
-};
+      <div id="scanZone" class="scan-zone" onclick="document.getElementById('fileInput').click()" ondragover="onDrag(event,true)" ondragleave="onDrag(event,false)" ondrop="onDrop(event)">
+        <div class="scan-icon">📄</div>
+        <div class="scan-hint">Tap to take photo or upload<br><strong>Supports JPG, PNG, PDF</strong></div>
+      </div>
+      <input type="file" id="fileInput" accept="image/*,application/pdf" capture="environment" onchange="onFileSelect(event)">
 
-// ── storage (localStorage — works in any browser) ─────────────────────────────
-const store = {
-  get: (key) => { try { const v=localStorage.getItem(key); return v?JSON.parse(v):null; } catch{ return null; } },
-  set: (key,val) => { try { localStorage.setItem(key,JSON.stringify(val)); } catch{} },
-};
-
-// ── main app ──────────────────────────────────────────────────────────────────
-function App() {
-  const [branch,  setBranch]  = useState("CBD");
-  const [tab,     setTab]     = useState("sales");
-  const [sales,   setSales]   = useState([]);
-  const [invoices,setInvoices]= useState([]);
-  const [salesForm, setSalesForm] = useState({inhouse:"",uber:"",doordash:"",booknorders:"",notes:""});
-  const [invForm,   setInvForm]   = useState({supplier:"",category:"",amount:"",date:todayStr(),invoiceNo:"",notes:"",customSupplier:""});
-  const [saved, setSaved] = useState("");
-  const [plWeek,setPlWeek]= useState(weekOf(todayStr()));
-
-  useEffect(()=>{
-    const s = store.get("sn_sales");    if(s) setSales(s);
-    const i = store.get("sn_invoices"); if(i) setInvoices(i);
-  },[]);
-
-  // computed
-  const todaySales = sales.filter(s=>s.date===todayStr()&&s.branch===branch);
-  const todayInv   = invoices.filter(i=>i.date===todayStr()&&i.branch===branch);
-  const todayNet   = todaySales.reduce((s,r)=>s+(r.netTotal||0),0);
-  const todayCost  = todayInv.reduce((s,i)=>s+Number(i.amount||0),0);
-  const liveCalc   = calcNet(salesForm);
-  const hasAny     = salesForm.inhouse||salesForm.uber||salesForm.doordash||salesForm.booknorders;
-
-  // weekly P&L
-  const buildWeek = (weekStart) => {
-    const dates = getWeekDates(weekStart);
-    const labour = ROSTERS[branch]||ROSTERS.CBD;
-    const labByDay = Array.from({length:7},(_,i)=>Object.values(labour).reduce((s,arr)=>s+arr[i],0));
-    const fixByDay = FIXED[branch]||FIXED.CBD;
-    const closed   = (i) => branch==="CBD" && i===6;
-    const days = dates.map((date,idx)=>{
-      const ds=sales.filter(s=>s.date===date&&s.branch===branch);
-      const di=invoices.filter(i=>i.date===date&&i.branch===branch);
-      const net=ds.reduce((s,r)=>s+(r.netTotal||0),0);
-      const food=di.reduce((s,i)=>s+Number(i.amount||0),0);
-      const lab=labByDay[idx], fix=fixByDay[idx], cl=closed(idx);
-      return {date,net,food,labour:lab,fixed:fix,closed:cl,pl:cl?-(lab+fix):net-food-lab-fix,
-              gross:ds.reduce((s,r)=>s+(r.grossTotal||0),0),comm:ds.reduce((s,r)=>s+(r.totalComm||0),0)};
-    });
-    const t={net:0,food:0,labour:0,fixed:0,pl:0};
-    days.forEach(d=>{t.net+=d.net;t.food+=d.food;t.labour+=d.labour;t.fixed+=d.fixed;t.pl+=d.pl;});
-    return {dates,days,totals:t};
-  };
-  const week = buildWeek(plWeek);
-  const changeWeek=(dir)=>{const d=new Date(plWeek);d.setDate(d.getDate()+dir*7);setPlWeek(d.toISOString().slice(0,10));};
-
-  // submit sales
-  const submitSales = () => {
-    const calc=calcNet(salesForm);
-    const updated=[...sales,{branch,date:todayStr(),...calc,notes:salesForm.notes,id:Date.now()}];
-    setSales(updated); store.set("sn_sales",updated);
-    setSalesForm({inhouse:"",uber:"",doordash:"",booknorders:"",notes:""});
-    setSaved("sales"); setTimeout(()=>setSaved(""),3000);
-  };
-
-  // submit invoice
-  const submitInv = () => {
-    if(!invForm.supplier||!invForm.amount) return;
-    const supplierName = invForm.supplier==="Other" ? (invForm.customSupplier||"Other Vendor") : invForm.supplier;
-    const entry={...invForm,supplier:supplierName,supplierGroup:supplierName,total:Number(invForm.amount),amount:Number(invForm.amount),branch,id:Date.now()};
-    const updated=[...invoices,entry];
-    setInvoices(updated); store.set("sn_invoices",updated);
-    setInvForm({supplier:"",category:"",amount:"",date:todayStr(),invoiceNo:"",notes:"",customSupplier:""});
-    setSaved("invoice"); setTimeout(()=>setSaved(""),3000);
-  };
-
-  const DAY_ABBR=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
-
-  return (
-    <div style={{minHeight:"100vh"}}>
-
-      {/* TOP BAR */}
-      <div style={{background:"#1a1a0d",padding:"0 32px",display:"flex",alignItems:"center",justifyContent:"space-between",height:"56px",position:"sticky",top:0,zIndex:100,boxShadow:"0 2px 8px rgba(0,0,0,0.4)"}}>
-        <div style={{display:"flex",alignItems:"center",gap:"16px"}}>
-          <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:"15px",color:"#c8a96e",fontWeight:500,letterSpacing:"0.06em"}}>SAIGON NOON</span>
-          <span style={{width:"1px",height:"20px",background:"#2a2a1a",display:"inline-block"}}/>
-          <span style={{fontSize:"12px",color:"#555",letterSpacing:"0.04em"}}>Staff Portal</span>
-          <span style={{width:"1px",height:"20px",background:"#2a2a1a",display:"inline-block"}}/>
-          <span style={{fontSize:"12px",color:"#444"}}>
-            {new Date().toLocaleDateString("en-NZ",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}
-          </span>
-        </div>
-        <div style={{display:"flex",gap:"6px"}}>
-          {BRANCHES.map(b=>(
-            <button key={b} className={`branch-tab ${branch===b?"active":""}`} onClick={()=>setBranch(b)}>{b}</button>
-          ))}
-        </div>
+      <div id="previewWrap" style="display:none" class="preview-wrap">
+        <img id="previewImg" src="" alt="Invoice preview">
+        <button class="remove-btn" onclick="clearScan()">×</button>
       </div>
 
-      {/* TODAY BANNER */}
-      <div style={{background:"#fff",borderBottom:"1px solid #ede8df",padding:"14px 32px",display:"flex",gap:"0",flexWrap:"wrap"}}>
-        {[
-          ["Today's Net Sales", todayNet, todaySales.length?"#166534":"#bbb", todaySales.length?"":"Not entered"],
-          ["Food Cost Today",   todayCost, todayCost>0?"#92400e":"#bbb",    todayCost>0?"":"No invoices"],
-          ["Today's P&L",       todayNet-todayCost, todayNet===0&&todayCost===0?"#bbb":(todayNet-todayCost)>=0?"#166534":"#dc2626", todayNet===0&&todayCost===0?"—":""],
-          ["Invoices Logged",   null, "#555", todayInv.length+" invoice"+(todayInv.length!==1?"s":"")+" today"],
-        ].map(([label,val,color,sub],i)=>(
-          <div key={label} style={{paddingRight:"24px",marginRight:"24px",borderRight:i<3?"1px solid #ede8df":"none"}}>
-            <div style={{fontSize:"10px",color:"#aaa",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:"3px"}}>{label}</div>
-            <div style={{fontSize:"20px",fontWeight:700,color,fontFamily:"'IBM Plex Mono',monospace"}}>
-              {val!==null ? (label==="Today's P&L"&&todayNet===0&&todayCost===0 ? "—" : fmt(val)) : sub}
-            </div>
-            {sub&&val!==null&&<div style={{fontSize:"11px",color:"#aaa",marginTop:"2px"}}>{sub}</div>}
-          </div>
-        ))}
+      <div id="scanningOverlay" class="scanning-overlay" style="display:none">
+        <div class="spinner"></div>
+        <div style="font-weight:600;margin-bottom:4px">Reading invoice…</div>
+        <div style="font-size:12px;color:#999">Claude AI is extracting details</div>
       </div>
 
-      {/* NAV */}
-      <div style={{background:"#fff",borderBottom:"1px solid #ede8df",padding:"0 32px",display:"flex",gap:"4px"}}>
-        {[["sales","💰  Sales Entry"],["invoices","📋  Log Invoice"],["pl","📊  Weekly P&L"],["history","🕐  History"]].map(([id,lbl])=>(
-          <button key={id} className={`tab ${tab===id?"active":""}`} onClick={()=>setTab(id)}>{lbl}</button>
-        ))}
-      </div>
+      <button class="btn" id="scanBtn" onclick="scanInvoice()" style="display:none">✨ Scan with AI</button>
+    </div>
 
-      <div style={{padding:"28px 32px",maxWidth:"1200px",margin:"0 auto"}}>
-
-        {/* ── SALES TAB ── */}
-        {tab==="sales" && (
-          <div style={{display:"grid",gridTemplateColumns:"500px 1fr",gap:"24px",alignItems:"start"}}>
-            <div className="card">
-              <div className="section-title">Tonight's Sales — {branch}</div>
-              {todaySales.length>0 && (
-                <div className="success-banner" style={{marginBottom:"18px"}}>
-                  ✓ Sales entered today — net {fmt(todayNet)}. Enter below to add another entry.
-                </div>
-              )}
-              <div style={{display:"flex",flexDirection:"column",gap:"16px"}}>
-                {[
-                  ["inhouse","🍜  In-House / Walk-in","No commission","#166534",null,null],
-                  ["uber","🚗  Uber Eats (enter gross amount)","30% commission","#92400e",0.30,0.70],
-                  ["doordash","🛵  DoorDash (enter gross amount)","27% commission","#92400e",0.27,0.73],
-                  ["booknorders","📱  BooknOrders","No commission","#166534",null,null],
-                ].map(([key,label,commLabel,commColor,commRate,keepRate])=>(
-                  <div key={key}>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"7px"}}>
-                      <label style={{fontSize:"13px",fontWeight:500}}>{label}</label>
-                      <span style={{fontSize:"11px",fontWeight:600,color:commColor,background:commRate?"#fff7ed":"transparent",padding:"2px 8px",borderRadius:"4px"}}>{commLabel}</span>
-                    </div>
-                    <input className="inp" type="number" placeholder="NZD 0.00" value={salesForm[key]}
-                      onChange={e=>setSalesForm({...salesForm,[key]:e.target.value})} />
-                    {commRate&&Number(salesForm[key])>0&&(
-                      <div style={{fontSize:"11px",color:"#f87171",marginTop:"4px"}}>
-                        Commission: -{fmt(Number(salesForm[key])*commRate)} · Restaurant keeps: {fmt(Number(salesForm[key])*keepRate)}
-                      </div>
-                    )}
-                  </div>
-                ))}
-                <div>
-                  <label style={{fontSize:"13px",fontWeight:500,display:"block",marginBottom:"7px"}}>Notes (optional)</label>
-                  <input className="inp" placeholder="e.g. public holiday, quiet night, private event..." value={salesForm.notes}
-                    onChange={e=>setSalesForm({...salesForm,notes:e.target.value})} />
-                </div>
-                {saved==="sales"&&<div className="success-banner">✅ Sales saved!</div>}
-                <button className="btn-primary" onClick={submitSales} disabled={!hasAny} style={{alignSelf:"flex-start"}}>
-                  Save Tonight's Sales
-                </button>
-              </div>
-            </div>
-
-            <div style={{display:"flex",flexDirection:"column",gap:"16px"}}>
-              {/* Live calc */}
-              <div className="card" style={{background:"#1a1a0d"}}>
-                <div style={{fontSize:"11px",color:"#555",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:"16px"}}>Live Calculation</div>
-                {[
-                  ["Gross Total",       fmt(liveCalc.grossTotal),      "#888"],
-                  ["Uber Commission",   liveCalc.uberComm>0?"-"+fmt(liveCalc.uberComm):"—", "#f87171"],
-                  ["DoorDash Commission",liveCalc.doordashComm>0?"-"+fmt(liveCalc.doordashComm):"—","#f87171"],
-                ].map(([l,v,c])=>(
-                  <div key={l} style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:"1px solid #2a2a1a"}}>
-                    <span style={{fontSize:"13px",color:"#555"}}>{l}</span>
-                    <span style={{fontSize:"13px",color:c,fontFamily:"'IBM Plex Mono',monospace"}}>{v}</span>
-                  </div>
-                ))}
-                <div style={{display:"flex",justifyContent:"space-between",paddingTop:"12px",marginTop:"4px"}}>
-                  <span style={{fontSize:"15px",color:"#c8a96e",fontWeight:600}}>Net to Restaurant</span>
-                  <span style={{fontSize:"24px",color:"#4ade80",fontWeight:700,fontFamily:"'IBM Plex Mono',monospace"}}>{fmt(liveCalc.netTotal)}</span>
-                </div>
-                {todayCost>0&&(
-                  <div style={{borderTop:"1px solid #2a2a1a",paddingTop:"12px",marginTop:"12px"}}>
-                    <div style={{display:"flex",justifyContent:"space-between",marginBottom:"8px"}}>
-                      <span style={{fontSize:"12px",color:"#555"}}>Food Cost Today</span>
-                      <span style={{fontSize:"12px",color:"#c8a96e",fontFamily:"'IBM Plex Mono',monospace"}}>-{fmt(todayCost)}</span>
-                    </div>
-                    <div style={{display:"flex",justifyContent:"space-between"}}>
-                      <span style={{fontSize:"13px",color:"#888"}}>Estimated P&L</span>
-                      <span style={{fontSize:"18px",fontWeight:700,fontFamily:"'IBM Plex Mono',monospace",color:liveCalc.netTotal-todayCost>=0?"#4ade80":"#f87171"}}>
-                        {fmt(liveCalc.netTotal-todayCost)}
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Today's invoices */}
-              {todayInv.length>0&&(
-                <div className="card">
-                  <div className="section-title">Today's Deliveries</div>
-                  {todayInv.map(inv=>(
-                    <div key={inv.id} className="table-row" style={{gridTemplateColumns:"1fr auto"}}>
-                      <div>
-                        <div style={{fontWeight:500}}>{inv.supplier}</div>
-                        <div style={{fontSize:"11px",color:"#aaa",marginTop:"2px"}}>{inv.category}{inv.invoiceNo?` · #${inv.invoiceNo}`:""}</div>
-                      </div>
-                      <div style={{fontWeight:700,fontFamily:"'IBM Plex Mono',monospace",color:"#92400e"}}>{fmt(inv.amount)}</div>
-                    </div>
-                  ))}
-                  <div style={{paddingTop:"12px",marginTop:"4px",borderTop:"2px solid #f0ebe0",display:"flex",justifyContent:"space-between"}}>
-                    <span style={{fontWeight:700}}>Total Food Cost</span>
-                    <span style={{fontWeight:700,fontFamily:"'IBM Plex Mono',monospace",color:"#92400e",fontSize:"18px"}}>{fmt(todayCost)}</span>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* ── INVOICES TAB ── */}
-        {tab==="invoices" && (
-          <div style={{display:"grid",gridTemplateColumns:"500px 1fr",gap:"24px",alignItems:"start"}}>
-            <div className="card">
-              <div className="section-title">Log Invoice — {branch}</div>
-              <div style={{display:"flex",flexDirection:"column",gap:"16px"}}>
-                <div>
-                  <label style={{fontSize:"13px",fontWeight:500,display:"block",marginBottom:"7px"}}>Supplier</label>
-                  <select className="inp" value={invForm.supplier} onChange={e=>setInvForm({...invForm,supplier:e.target.value})}>
-                    <option value="">Select supplier...</option>
-                    {SUPPLIERS[branch].map(s=><option key={s} value={s}>{s}</option>)}
-                  </select>
-                </div>
-                {invForm.supplier==="Other"&&(
-                  <div>
-                    <label style={{fontSize:"13px",fontWeight:500,display:"block",marginBottom:"7px"}}>Vendor Name</label>
-                    <input className="inp" placeholder="e.g. Pak'nSave, Local Butchery..." value={invForm.customSupplier}
-                      onChange={e=>setInvForm({...invForm,customSupplier:e.target.value})} />
-                  </div>
-                )}
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px"}}>
-                  <div>
-                    <label style={{fontSize:"13px",fontWeight:500,display:"block",marginBottom:"7px"}}>Category</label>
-                    <select className="inp" value={invForm.category} onChange={e=>setInvForm({...invForm,category:e.target.value})}>
-                      <option value="">Select...</option>
-                      {["Produce","Meat","Seafood","Beverages","Dry Goods","Packaging","Cleaning","Other"].map(c=><option key={c}>{c}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label style={{fontSize:"13px",fontWeight:500,display:"block",marginBottom:"7px"}}>Invoice Date</label>
-                    <input className="inp" type="date" value={invForm.date} onChange={e=>setInvForm({...invForm,date:e.target.value})} />
-                  </div>
-                </div>
-                <div>
-                  <label style={{fontSize:"13px",fontWeight:500,display:"block",marginBottom:"7px"}}>Total Amount — NZD (incl. GST)</label>
-                  <input className="inp" type="number" placeholder="0.00" value={invForm.amount}
-                    onChange={e=>setInvForm({...invForm,amount:e.target.value})} style={{fontSize:"20px",fontWeight:600}} />
-                </div>
-                <div>
-                  <label style={{fontSize:"13px",fontWeight:500,display:"block",marginBottom:"7px"}}>Invoice / Docket Number (optional)</label>
-                  <input className="inp" placeholder="e.g. INV-12345" value={invForm.invoiceNo}
-                    onChange={e=>setInvForm({...invForm,invoiceNo:e.target.value})} />
-                </div>
-                <div>
-                  <label style={{fontSize:"13px",fontWeight:500,display:"block",marginBottom:"7px"}}>Notes (optional)</label>
-                  <input className="inp" placeholder="Any comments about this delivery..." value={invForm.notes}
-                    onChange={e=>setInvForm({...invForm,notes:e.target.value})} />
-                </div>
-                {saved==="invoice"&&<div className="success-banner">✅ Invoice logged!</div>}
-                <button className="btn-primary" onClick={submitInv} disabled={!invForm.supplier||!invForm.amount} style={{alignSelf:"flex-start"}}>
-                  Save Invoice
-                </button>
-              </div>
-            </div>
-
-            <div className="card">
-              <div className="section-title">Today's Invoices — {branch} · {fmtDate(todayStr())}</div>
-              {todayInv.length===0?(
-                <div style={{fontSize:"13px",color:"#aaa",padding:"24px 0",textAlign:"center"}}>No invoices logged today yet</div>
-              ):(
-                <>
-                  {todayInv.map(inv=>(
-                    <div key={inv.id} className="table-row" style={{gridTemplateColumns:"1fr auto"}}>
-                      <div>
-                        <div style={{fontWeight:500,fontSize:"13px"}}>{inv.supplier}</div>
-                        <div style={{fontSize:"11px",color:"#aaa",marginTop:"2px"}}>
-                          {inv.category}{inv.invoiceNo?` · #${inv.invoiceNo}`:""} · {fmtDate(inv.date)}
-                        </div>
-                        {inv.notes&&<div style={{fontSize:"11px",color:"#c8a96e",marginTop:"2px"}}>{inv.notes}</div>}
-                      </div>
-                      <div style={{fontWeight:700,fontFamily:"'IBM Plex Mono',monospace",color:"#92400e",paddingLeft:"16px"}}>{fmt(inv.amount)}</div>
-                    </div>
-                  ))}
-                  <div style={{marginTop:"14px",paddingTop:"14px",borderTop:"2px solid #f0ebe0",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                    <span style={{fontSize:"14px",fontWeight:700}}>Total Food Cost Today</span>
-                    <span style={{fontSize:"22px",fontWeight:700,fontFamily:"'IBM Plex Mono',monospace",color:"#92400e"}}>{fmt(todayCost)}</span>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* ── P&L TAB ── */}
-        {tab==="pl" && (
-          <div>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"20px",flexWrap:"wrap",gap:"12px"}}>
-              <div className="week-nav">
-                <button onClick={()=>changeWeek(-1)}>← Prev Week</button>
-                <div style={{fontSize:"14px",fontWeight:600}}>
-                  Week of {fmtDate(plWeek)} — <span style={{color:"#c8a96e"}}>{branch}</span>
-                </div>
-                <button onClick={()=>changeWeek(1)}>Next Week →</button>
-              </div>
-              {plWeek!==weekOf(todayStr())&&(
-                <button className="btn-ghost" onClick={()=>setPlWeek(weekOf(todayStr()))}>↩ This Week</button>
-              )}
-            </div>
-
-            {/* Summary */}
-            <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:"12px",marginBottom:"20px"}}>
-              {[
-                ["Net Sales",   week.totals.net,    "#4ade80"],
-                ["Food Cost",   week.totals.food,   "#c8a96e"],
-                ["Labour",      week.totals.labour, "#60a5fa"],
-                ["Fixed Costs", week.totals.fixed,  "#888"],
-                ["Profit / Loss",week.totals.pl,    week.totals.pl>=0?"#4ade80":"#f87171"],
-              ].map(([label,val,color])=>(
-                <div key={label} className="metric">
-                  <div style={{fontSize:"10px",color:"#555",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:"8px"}}>{label}</div>
-                  <div style={{fontSize:"22px",fontWeight:700,color,fontFamily:"'IBM Plex Mono',monospace"}}>{fmt(val)}</div>
-                  {label!=="Net Sales"&&week.totals.net>0&&(
-                    <div style={{fontSize:"11px",color:"#444",marginTop:"4px"}}>{pct(val,week.totals.net)} of sales</div>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            {/* Daily table */}
-            <div className="card" style={{overflowX:"auto",marginBottom:"16px"}}>
-              <div className="section-title">Daily Breakdown</div>
-              <div className="pl-grid">
-                {["", ...DAY_ABBR.map((d,i)=>week.days[i].closed?d+" ✕":d), "TOTAL"].map((h,i)=>(
-                  <div key={i} className="pl-head" style={{textAlign:i===0?"left":"right"}}>{h}</div>
-                ))}
-                {/* dates */}
-                {["",...week.dates,""].map((v,i)=>(
-                  <div key={"d"+i} className="pl-cell" style={{textAlign:i===0?"left":"right",fontSize:"11px",color:"#aaa",fontFamily:i===0?"inherit":"'IBM Plex Mono',monospace"}}>
-                    {i===0||i===8?"":new Date(v+"T12:00:00").toLocaleDateString("en-NZ",{day:"numeric",month:"short"})}
-                  </div>
-                ))}
-                {[
-                  ["Net Sales",  week.days.map(d=>d.net),    week.totals.net,    "#166534", true],
-                  ["Food Cost",  week.days.map(d=>d.food),   week.totals.food,   "#92400e", false],
-                  ["Labour",     week.days.map(d=>d.labour), week.totals.labour, "#1d4ed8", false],
-                  ["Fixed",      week.days.map(d=>d.fixed),  week.totals.fixed,  "#555",    false],
-                ].map(([label,vals,total,color,bold])=>[
-                  <div key={label+"l"} className="pl-label" style={{fontWeight:bold?600:400,color:bold?"#1a1a0d":"#555"}}>{label}</div>,
-                  ...vals.map((v,i)=>(
-                    <div key={label+i} className="pl-cell" style={{color:week.days[i].closed?"#ddd":color,fontWeight:bold?600:400}}>
-                      {week.days[i].closed?"—":v===0?"-":fmt(v)}
-                    </div>
-                  )),
-                  <div key={label+"t"} className="pl-cell" style={{color,fontWeight:700}}>{fmt(total)}</div>
-                ])}
-                <div className="pl-label pl-net-row" style={{borderRadius:"0 0 0 8px"}}>PROFIT / LOSS</div>
-                {week.days.map((d,i)=>(
-                  <div key={"pl"+i} className="pl-cell pl-net-row" style={{color:d.closed?"#1a3d1a":d.pl>=0?"#4ade80":"#f87171"}}>
-                    {d.closed?"—":fmt(d.pl)}
-                  </div>
-                ))}
-                <div className="pl-cell pl-net-row" style={{color:week.totals.pl>=0?"#4ade80":"#f87171",borderRadius:"0 0 8px 0"}}>{fmt(week.totals.pl)}</div>
-              </div>
-            </div>
-
-            {/* Cost % */}
-            <div className="card">
-              <div className="section-title">Cost % vs Targets</div>
-              <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"20px"}}>
-                {[
-                  ["Food Cost %",week.totals.food,30,"#c8a96e"],
-                  ["Labour %",week.totals.labour,35,"#60a5fa"],
-                  ["Fixed %",week.totals.fixed,25,"#888"],
-                ].map(([label,val,target,color])=>{
-                  const p=week.totals.net?(val/week.totals.net)*100:0;
-                  const over=p>target;
-                  return (
-                    <div key={label}>
-                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:"8px"}}>
-                        <span style={{fontSize:"13px",fontWeight:500}}>{label}</span>
-                        <span style={{fontSize:"14px",fontWeight:700,color:over?"#dc2626":"#166534",fontFamily:"'IBM Plex Mono',monospace"}}>
-                          {p.toFixed(1)}%
-                          <span style={{fontSize:"11px",fontWeight:400,color:"#aaa",marginLeft:"6px"}}>/ {target}% target</span>
-                        </span>
-                      </div>
-                      <div style={{height:"10px",background:"#f0ebe0",borderRadius:"5px",overflow:"hidden"}}>
-                        <div style={{height:"100%",borderRadius:"5px",background:over?"#dc2626":color,width:Math.min(p/50*100,100)+"%",transition:"width 0.5s"}}/>
-                      </div>
-                      {over&&<div style={{fontSize:"12px",color:"#dc2626",marginTop:"5px"}}>⚠ {(p-target).toFixed(1)}% over target</div>}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ── HISTORY TAB ── */}
-        {tab==="history" && (
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"24px"}}>
-            <div className="card">
-              <div className="section-title">Recent Sales — {branch}</div>
-              {sales.filter(s=>s.branch===branch).length===0?(
-                <div style={{fontSize:"13px",color:"#aaa",padding:"20px 0",textAlign:"center"}}>No sales recorded yet</div>
-              ):sales.filter(s=>s.branch===branch).slice(-15).reverse().map(s=>(
-                <div key={s.id} className="table-row" style={{gridTemplateColumns:"1fr auto"}}>
-                  <div>
-                    <div style={{fontWeight:500,fontSize:"13px"}}>{fmtDate(s.date)}</div>
-                    <div style={{fontSize:"11px",color:"#aaa",marginTop:"2px"}}>
-                      {s.uber>0&&`UE ${fmt(s.uber)}  `}{s.doordash>0&&`DD ${fmt(s.doordash)}  `}
-                      {s.booknorders>0&&`BnO ${fmt(s.booknorders)}  `}{s.inhouse>0&&`In-house ${fmt(s.inhouse)}`}
-                    </div>
-                  </div>
-                  <div style={{textAlign:"right",paddingLeft:"16px"}}>
-                    <div style={{fontWeight:700,color:"#166534",fontFamily:"'IBM Plex Mono',monospace"}}>{fmt(s.netTotal)}</div>
-                    {s.totalComm>0&&<div style={{fontSize:"11px",color:"#f87171"}}>-{fmt(s.totalComm)} comm</div>}
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="card">
-              <div className="section-title">Recent Invoices — {branch}</div>
-              {invoices.filter(i=>i.branch===branch).length===0?(
-                <div style={{fontSize:"13px",color:"#aaa",padding:"20px 0",textAlign:"center"}}>No invoices recorded yet</div>
-              ):invoices.filter(i=>i.branch===branch).slice(-15).reverse().map(i=>(
-                <div key={i.id} className="table-row" style={{gridTemplateColumns:"1fr auto"}}>
-                  <div>
-                    <div style={{fontWeight:500,fontSize:"13px"}}>{i.supplier}</div>
-                    <div style={{fontSize:"11px",color:"#aaa",marginTop:"2px"}}>{fmtDate(i.date)} · {i.category}</div>
-                    {i.notes&&<div style={{fontSize:"11px",color:"#c8a96e",marginTop:"2px"}}>{i.notes}</div>}
-                  </div>
-                  <div style={{fontWeight:700,fontFamily:"'IBM Plex Mono',monospace",color:"#92400e",paddingLeft:"16px"}}>{fmt(i.amount)}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-      </div>
-
-      <div style={{textAlign:"center",padding:"20px",fontSize:"11px",color:"#ccc"}}>
-        Saigon Noon Staff Portal · Data saved locally on this device
+    <div id="invoiceForm" style="display:none">
+      <div class="card">
+        <h2>📝 Invoice Details <span style="font-size:12px;font-weight:400;color:#27ae60">✓ AI filled</span></h2>
+        <label>Date</label>
+        <input type="date" id="invDate">
+        <label>Supplier</label>
+        <select id="invSupplier">
+          <option value="">Select supplier…</option>
+          <option>Bid Food</option>
+          <option>Bid Fresh</option>
+          <option>Food Services</option>
+          <option>Service Food</option>
+          <option>Butchery</option>
+          <option>Supermarket</option>
+          <option>Drinks Supplier</option>
+          <option>Other</option>
+        </select>
+        <label>Total Amount ($)</label>
+        <input type="number" id="invAmount" placeholder="0.00">
+        <label>GST Amount ($)</label>
+        <input type="number" id="invGST" placeholder="0.00">
+        <label>Invoice No.</label>
+        <input type="text" id="invNo" placeholder="e.g. INV-12345">
+        <label>AI Notes</label>
+        <textarea id="invNotes" rows="3" placeholder="Items detected by AI…"></textarea>
+        <button class="btn" id="saveInvBtn" onclick="saveInvoice()">Save Invoice</button>
+        <button class="btn btn-outline" onclick="clearScan()" style="margin-top:8px">Scan Another</button>
       </div>
     </div>
-  );
+
+    <div class="card" style="background:#fff8e1;border:1px solid #ffe082">
+      <div style="font-size:13px;color:#856404;font-weight:600;margin-bottom:4px">💡 How to use</div>
+      <div style="font-size:12px;color:#856404;line-height:1.6">
+        1. Tap the scan zone above<br>
+        2. Take a photo of the invoice or upload a file<br>
+        3. AI reads the details in seconds<br>
+        4. Check the details and tap Save
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SALES TAB ── -->
+  <div id="tab-sales" style="display:none">
+    <div class="card">
+      <h2>Daily Sales Entry</h2>
+      <label>Date</label>
+      <input type="date" id="salesDate">
+      <label>In-House / Walk-in ($)</label>
+      <input type="number" id="inhouse" placeholder="0.00" oninput="calcSales()">
+      <label>Uber Eats — Gross $ (30% commission deducted)</label>
+      <input type="number" id="uber" placeholder="0.00" oninput="calcSales()">
+      <label>DoorDash — Gross $ (27% commission deducted)</label>
+      <input type="number" id="doordash" placeholder="0.00" oninput="calcSales()">
+      <label>BooknOrders ($)</label>
+      <input type="number" id="booknorders" placeholder="0.00" oninput="calcSales()">
+      <label>Notes</label>
+      <textarea id="salesNotes" rows="2" placeholder="Optional…"></textarea>
+    </div>
+    <div class="card">
+      <h2>Summary</h2>
+      <div class="calc-row"><span>In-House</span><span id="rIH">$0.00</span></div>
+      <div class="calc-row"><span>Uber net (after 30%)</span><span id="rUB">$0.00</span></div>
+      <div class="calc-row"><span>DoorDash net (after 27%)</span><span id="rDD">$0.00</span></div>
+      <div class="calc-row"><span>BooknOrders</span><span id="rBO">$0.00</span></div>
+      <div class="calc-row"><span style="color:#e74c3c">Commission lost</span><span id="rCM" style="color:#e74c3c">-$0.00</span></div>
+      <div class="calc-row net"><span>NET SALES</span><span id="rNT">$0.00</span></div>
+    </div>
+    <button class="btn" id="saveSalesBtn" onclick="saveSales()">Save Sales</button>
+  </div>
+
+  <!-- ── P&L TAB ── -->
+  <div id="tab-pl" style="display:none">
+    <div class="card">
+      <h2>Weekly P&amp;L</h2>
+      <label>Week starting (Monday)</label>
+      <input type="date" id="plDate" onchange="loadPL()">
+    </div>
+    <div id="plOut"><div class="loading-msg">Select a week above</div></div>
+  </div>
+
+  <!-- ── HISTORY TAB ── -->
+  <div id="tab-history" style="display:none">
+    <div class="card"><h2>Recent Sales</h2><div id="hSales"><div class="loading-msg">Loading…</div></div></div>
+    <div class="card" style="margin-top:12px"><h2>Recent Invoices</h2><div id="hInv"><div class="loading-msg">Loading…</div></div></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ──────────────────────────────────────────
+// CONFIG
+// ──────────────────────────────────────────
+const SB_URL  = 'https://sqzxdougtzbfuzlusxar.supabase.co';
+const SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNxenhkb3VndHpiZnV6bHVzeGFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyNzc5MDgsImV4cCI6MjA5NTg1MzkwOH0.xWJ2u7YobLZSPOlEoDUTfffqN2wkFbS3NgkoyF5aWdY';
+const AI_URL  = 'https://saigon-ai.saigonnoon.workers.dev';
+
+const SB_HDR = { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
+
+async function sbInsert(table, data) {
+  const r = await fetch(`${SB_URL}/rest/v1/${table}`, { method:'POST', headers: SB_HDR, body: JSON.stringify(data) });
+  if (!r.ok) throw new Error(await r.text());
+}
+async function sbSelect(table, qs) {
+  const r = await fetch(`${SB_URL}/rest/v1/${table}?${qs}`, { headers: { ...SB_HDR, 'Prefer':'return=representation' } });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+// ──────────────────────────────────────────
+// STATE
+// ──────────────────────────────────────────
+let branch = 'CBD';
+let scanImageB64 = null;
+let scanMediaType = 'image/jpeg';
+
+function setBranch(b) {
+  branch = b;
+  document.getElementById('bCBD').classList.toggle('active', b === 'CBD');
+  document.getElementById('bRot').classList.toggle('active', b === 'Rototuna');
+  const t = document.querySelector('.tab.active')?.onclick?.toString().match(/'(\w+)'/)?.[1];
+  if (t === 'history') loadHistory();
+  if (t === 'pl') loadPL();
+}
+
+function showTab(name) {
+  ['scan','sales','pl','history'].forEach(t => {
+    document.getElementById(`tab-${t}`).style.display = t === name ? 'block' : 'none';
+  });
+  document.querySelectorAll('.tab').forEach((el, i) => {
+    el.classList.toggle('active', ['scan','sales','pl','history'][i] === name);
+  });
+  if (name === 'history') loadHistory();
+  if (name === 'pl') loadPL();
+}
+
+// ──────────────────────────────────────────
+// INIT
+// ──────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', async () => {
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('salesDate').value = today;
+  document.getElementById('invDate').value = today;
+  const mon = getMonday(new Date());
+  document.getElementById('plDate').value = mon;
+
+  try {
+    await sbSelect('sales', 'limit=1');
+    document.getElementById('dot').className = 'dot on';
+    document.getElementById('connTxt').textContent = 'Connected';
+  } catch {
+    document.getElementById('connTxt').textContent = 'Offline';
+  }
+});
+
+function getMonday(d) {
+  const c = new Date(d);
+  c.setDate(c.getDate() - ((c.getDay() + 6) % 7));
+  return c.toISOString().split('T')[0];
+}
+
+// ──────────────────────────────────────────
+// INVOICE SCANNER
+// ──────────────────────────────────────────
+function onDrag(e, over) {
+  e.preventDefault();
+  document.getElementById('scanZone').classList.toggle('dragging', over);
+}
+function onDrop(e) {
+  e.preventDefault();
+  document.getElementById('scanZone').classList.remove('dragging');
+  const file = e.dataTransfer.files[0];
+  if (file) handleFile(file);
+}
+function onFileSelect(e) {
+  const file = e.target.files[0];
+  if (file) handleFile(file);
+}
+
+function handleFile(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const dataUrl = e.target.result;
+    const b64 = dataUrl.split(',')[1];
+    scanImageB64 = b64;
+    scanMediaType = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+
+    document.getElementById('previewImg').src = dataUrl;
+    document.getElementById('previewWrap').style.display = 'block';
+    document.getElementById('scanZone').style.display = 'none';
+    document.getElementById('scanBtn').style.display = 'block';
+    document.getElementById('invoiceForm').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearScan() {
+  scanImageB64 = null;
+  document.getElementById('previewWrap').style.display = 'none';
+  document.getElementById('scanZone').style.display = 'block';
+  document.getElementById('scanBtn').style.display = 'none';
+  document.getElementById('scanningOverlay').style.display = 'none';
+  document.getElementById('invoiceForm').style.display = 'none';
+  document.getElementById('fileInput').value = '';
+}
+
+async function scanInvoice() {
+  if (!scanImageB64) return;
+
+  document.getElementById('scanBtn').style.display = 'none';
+  document.getElementById('scanningOverlay').style.display = 'block';
+
+  try {
+    const res = await fetch(AI_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${SB_KEY}`,
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 512,
+        messages: [{
+          role: 'user',
+          content: [
+            {
+              type: 'image',
+              source: { type: 'base64', media_type: scanMediaType, data: scanImageB64 }
+            },
+            {
+              type: 'text',
+              text: `This is a supplier invoice for a Vietnamese restaurant in New Zealand called Saigon Noon.
+Extract the following and reply ONLY with valid JSON (no markdown, no explanation):
+{
+  "supplier": "name of the supplier company",
+  "date": "YYYY-MM-DD format if visible, else empty string",
+  "total_amount": number (total amount including GST, as a number),
+  "gst_amount": number (GST amount if shown, else total_amount / 11 rounded to 2dp),
+  "invoice_no": "invoice number if shown, else empty string",
+  "items_summary": "brief summary of main items purchased, max 100 chars"
+}
+
+Known suppliers for this restaurant: Bid Food, Bid Fresh, Food Services, Service Food, Butchery.
+Match to the closest known supplier if possible.
+If you cannot determine a value with confidence, use null.`
+            }
+          ]
+        }]
+      })
+    });
+
+    if (!res.ok) throw new Error(`AI error: ${res.status}`);
+    const data = await res.json();
+    const text = data.content[0].text.trim();
+
+    let parsed;
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      const match = text.match(/\{[\s\S]*\}/);
+      if (match) parsed = JSON.parse(match[0]);
+      else throw new Error('Could not parse AI response');
+    }
+
+    // Fill form
+    if (parsed.date) document.getElementById('invDate').value = parsed.date;
+    if (parsed.supplier) {
+      const sel = document.getElementById('invSupplier');
+      const opts = Array.from(sel.options).map(o => o.value);
+      const match = opts.find(o => o.toLowerCase().includes((parsed.supplier||'').toLowerCase().split(' ')[0]));
+      if (match) sel.value = match;
+    }
+    if (parsed.total_amount) document.getElementById('invAmount').value = parsed.total_amount;
+    if (parsed.gst_amount) document.getElementById('invGST').value = parsed.gst_amount;
+    if (parsed.invoice_no) document.getElementById('invNo').value = parsed.invoice_no;
+    if (parsed.items_summary) document.getElementById('invNotes').value = parsed.items_summary;
+
+    document.getElementById('scanningOverlay').style.display = 'none';
+    document.getElementById('invoiceForm').style.display = 'block';
+    showToast('Invoice scanned ✓');
+
+  } catch (e) {
+    document.getElementById('scanningOverlay').style.display = 'none';
+    document.getElementById('scanBtn').style.display = 'block';
+    showToast('Scan failed: ' + e.message, true);
+  }
+}
+
+async function saveInvoice() {
+  const btn = document.getElementById('saveInvBtn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  try {
+    const supplier = document.getElementById('invSupplier').value;
+    if (!supplier) { showToast('Select a supplier', true); btn.disabled=false; btn.textContent='Save Invoice'; return; }
+    const foodSupps = ['Bid Food','Bid Fresh','Food Services','Service Food','Butchery'];
+    await sbInsert('invoices', {
+      branch, date: document.getElementById('invDate').value,
+      supplier, supplier_group: foodSupps.includes(supplier) ? 'Food' : 'Other',
+      category: foodSupps.includes(supplier) ? 'Food' : 'Other',
+      amount: parseFloat(document.getElementById('invAmount').value)||0,
+      invoice_no: document.getElementById('invNo').value,
+      notes: document.getElementById('invNotes').value
+    });
+    showToast('Invoice saved!');
+    clearScan();
+  } catch (e) { showToast('Error: '+e.message, true); }
+  btn.disabled=false; btn.textContent='Save Invoice';
+}
+
+// ──────────────────────────────────────────
+// SALES
+// ──────────────────────────────────────────
+function v(id) { return parseFloat(document.getElementById(id).value)||0; }
+function fmt(n) { return '$'+(n||0).toFixed(2); }
+
+function calcSales() {
+  const ih=v('inhouse'), ub=v('uber'), dd=v('doordash'), bo=v('booknorders');
+  const uc=ub*.3, dc=dd*.27, tc=uc+dc;
+  document.getElementById('rIH').textContent=fmt(ih);
+  document.getElementById('rUB').textContent=fmt(ub-uc);
+  document.getElementById('rDD').textContent=fmt(dd-dc);
+  document.getElementById('rBO').textContent=fmt(bo);
+  document.getElementById('rCM').textContent='-'+fmt(tc);
+  document.getElementById('rNT').textContent=fmt(ih+(ub-uc)+(dd-dc)+bo);
+}
+
+async function saveSales() {
+  const btn=document.getElementById('saveSalesBtn');
+  btn.disabled=true; btn.textContent='Saving…';
+  try {
+    const ih=v('inhouse'), ub=v('uber'), dd=v('doordash'), bo=v('booknorders');
+    const uc=ub*.3, dc=dd*.27;
+    await sbInsert('sales',{
+      branch, date:document.getElementById('salesDate').value,
+      inhouse:ih, uber:ub, doordash:dd, booknorders:bo,
+      gross_total:ih+ub+dd+bo, uber_comm:uc, doordash_comm:dc,
+      total_comm:uc+dc, net_total:ih+(ub-uc)+(dd-dc)+bo,
+      notes:document.getElementById('salesNotes').value
+    });
+    showToast('Sales saved!');
+    ['inhouse','uber','doordash','booknorders'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('salesNotes').value='';
+    calcSales();
+  } catch(e){ showToast('Error: '+e.message,true); }
+  btn.disabled=false; btn.textContent='Save Sales';
+}
+
+// ──────────────────────────────────────────
+// P&L
+// ──────────────────────────────────────────
+const FIXED={ CBD:{wk:415,sun:315}, Rototuna:{wk:513,sun:513} };
+const ROSTER={
+  CBD:{Alimi:[150,250,250,160,160,150,0],Lucy:[0,200,200,0,0,0,0],Melly:[0,250,250,250,250,250,0],Erik:[0,250,250,250,250,0,0],'Marie/Mellisa':[150,0,0,120,120,170,0],Naomi:[210,0,0,0,150,150,0],Linh:[0,0,0,90,90,90,0]},
+  Rototuna:{Giang:[0,200,200,225,225,225,0],Alimi:[225,0,0,0,0,0,225],David:[225,200,200,0,225,225,0],Jenny:[0,0,0,0,0,0,0],Melly:[0,0,0,200,125,0,200],Valerie:[0,0,100,0,100,125,125],Henry:[0,0,0,100,0,0,0],Cora:[100,100,0,0,0,125,100]}
+};
+
+function calcFixed(b,s,e){let t=0;for(let d=new Date(s);d<=new Date(e);d.setDate(d.getDate()+1)){const sun=d.getDay()===0;t+=b==='CBD'&&sun?FIXED.CBD.sun:FIXED[b].wk;}return t;}
+function calcLabour(b,s,e){let t=0;for(let d=new Date(s);d<=new Date(e);d.setDate(d.getDate()+1)){const dow=(d.getDay()+6)%7;Object.values(ROSTER[b]).forEach(w=>t+=w[dow]);}return t;}
+
+async function loadPL() {
+  const ws=document.getElementById('plDate').value; if(!ws)return;
+  const we=new Date(ws); we.setDate(we.getDate()+6); const weStr=we.toISOString().split('T')[0];
+  document.getElementById('plOut').innerHTML='<div class="loading-msg">Loading…</div>';
+  try {
+    const [sales,inv]=await Promise.all([
+      sbSelect('sales',`branch=eq.${branch}&date=gte.${ws}&date=lte.${weStr}`),
+      sbSelect('invoices',`branch=eq.${branch}&date=gte.${ws}&date=lte.${weStr}`)
+    ]);
+    const net=sales.reduce((s,r)=>s+(r.net_total||0),0);
+    const food=inv.reduce((s,r)=>s+(r.amount||0),0);
+    const labour=calcLabour(branch,ws,weStr);
+    const fixed=calcFixed(branch,ws,weStr);
+    const gp=net-food-labour-fixed;
+    const tax=gp>0?gp*.33:0;
+    const np=gp-tax;
+    const p=(n)=>net>0?` (${((n/net)*100).toFixed(1)}%)`:'';
+    const bc=(pv,tgt)=>pv<=tgt?'g':pv<=tgt*1.15?'a':'r';
+    const fp=(food/net)*100, lp=(labour/net)*100, xp=(fixed/net)*100;
+    document.getElementById('plOut').innerHTML=`
+      <div class="card">
+        <div class="pl-row hd"><span>REVENUE</span></div>
+        <div class="pl-row"><span>Net Sales</span><span><strong>${fmt(net)}</strong></span></div>
+        <div class="pl-row hd"><span>COSTS</span></div>
+        <div class="pl-row"><span>Food Cost<span class="pct">${p(food)}</span></span><span>${fmt(food)}</span></div>
+        <div class="pl-row"><span>Labour<span class="pct">${p(labour)}</span></span><span>${fmt(labour)}</span></div>
+        <div class="pl-row"><span>Fixed<span class="pct">${p(fixed)}</span></span><span>${fmt(fixed)}</span></div>
+        <div class="pl-row hd"><span>PROFIT</span></div>
+        <div class="pl-row"><span>Gross Profit</span><span class="${gp>=0?'pos':'neg'}">${fmt(gp)}</span></div>
+        <div class="pl-row"><span>Tax (33%)</span><span>-${fmt(tax)}</span></div>
+        <div class="pl-row big"><span>Net Profit</span><span class="${np>=0?'pos':'neg'}">${fmt(np)}</span></div>
+        <div class="bar-wrap">
+          ${bar('Food',fp,30,bc(fp,30))}${bar('Labour',lp,35,bc(lp,35))}${bar('Fixed',xp,25,bc(xp,25))}
+        </div>
+      </div>`;
+  } catch(e){ document.getElementById('plOut').innerHTML=`<div class="loading-msg" style="color:#e74c3c">Error: ${e.message}</div>`; }
+}
+
+function bar(lbl,pv,tgt,cls){return`<div class="bar-lbl"><span>${lbl}</span><span>${pv.toFixed(1)}% / target ${tgt}%</span></div><div class="bar-track"><div class="bar-fill ${cls}" style="width:${Math.min(pv,100)}%"></div></div>`;}
+
+// ──────────────────────────────────────────
+// HISTORY
+// ──────────────────────────────────────────
+async function loadHistory() {
+  document.getElementById('hSales').innerHTML='<div class="loading-msg">Loading…</div>';
+  document.getElementById('hInv').innerHTML='<div class="loading-msg">Loading…</div>';
+  try {
+    const [sales,inv]=await Promise.all([
+      sbSelect('sales',`branch=eq.${branch}&order=date.desc&limit=10`),
+      sbSelect('invoices',`branch=eq.${branch}&order=date.desc&limit=10`)
+    ]);
+    document.getElementById('hSales').innerHTML=sales.length
+      ?sales.map(s=>`<div class="hist-item"><div style="display:flex;justify-content:space-between"><span>${s.date}</span><span class="hist-amt pos">Net ${fmt(s.net_total)}</span></div><div class="hist-meta">In-house $${(s.inhouse||0).toFixed(0)} · Uber $${(s.uber||0).toFixed(0)} · DD $${(s.doordash||0).toFixed(0)} · B&O $${(s.booknorders||0).toFixed(0)}</div></div>`).join('')
+      :'<div class="loading-msg">No sales yet.</div>';
+    document.getElementById('hInv').innerHTML=inv.length
+      ?inv.map(i=>`<div class="hist-item"><div style="display:flex;justify-content:space-between"><span>${i.date} · ${i.supplier||'?'}</span><span class="hist-amt neg">-${fmt(i.amount)}</span></div><div class="hist-meta">${i.invoice_no||'No invoice #'} · ${i.notes||''}</div></div>`).join('')
+      :'<div class="loading-msg">No invoices yet.</div>';
+  } catch(e){
+    document.getElementById('hSales').innerHTML=`<div class="loading-msg" style="color:red">Error: ${e.message}</div>`;
+  }
+}
+
+// ──────────────────────────────────────────
+// TOAST
+// ──────────────────────────────────────────
+function showToast(msg,err=false){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast'+(err?' err':'');
+  t.style.display='block'; setTimeout(()=>t.style.display='none',3000);
+}
 </script>
 </body>
 </html>
