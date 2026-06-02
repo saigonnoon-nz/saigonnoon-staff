@@ -165,8 +165,9 @@
     <div class="card">
       <h2>Invoice History - <span id="invHistBranch" style="color:var(--muted)">CBD</span></h2>
       <div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:14px">
-        <div style="flex:1"><label style="margin-top:0">Filter by date</label><input type="date" id="invHistDate" onchange="loadInvHistory()"></div>
-        <button class="btn-sm btn-blue" onclick="clearDateFilter()" style="margin-bottom:1px;padding:10px 14px">All</button>
+        <div style="flex:1"><label style="margin-top:0">Filter by date</label><input type="date" id="invHistDate"></div>
+        <button class="btn-sm btn-blue" onclick="loadInvHistory()" style="margin-bottom:1px;padding:10px 14px">Load</button>
+        <button class="btn-sm" onclick="clearDateFilter()" style="margin-bottom:1px;padding:10px 14px;background:var(--bg2);color:var(--muted);border:1px solid var(--border)">All</button>
       </div>
       <div id="invHistList"><div class="loading-msg">Loading...</div></div>
     </div>
@@ -280,23 +281,67 @@ function setPLMode(m){
   loadPL();
 }
 const FIXED={CBD:{wk:415,sun:0},Rototuna:{wk:513,sun:513}};
-const ROSTER={
-  CBD:{Alimi:[150,250,250,160,160,150,0],Lucy:[0,200,200,0,0,0,0],Melly:[0,250,250,250,250,250,0],Erik:[0,250,250,250,250,0,0],'Marie/Mellisa':[150,0,0,120,120,170,0],Naomi:[210,0,0,0,150,150,0],Linh:[0,0,0,90,90,90,0]},
-  Rototuna:{Giang:[0,200,200,225,225,225,0],Alimi:[225,0,0,0,0,0,225],David:[225,200,200,0,225,225,0],Jenny:[0,0,0,0,0,0,0],Melly:[0,0,0,200,125,0,200],Valerie:[0,0,100,0,100,125,125],Henry:[0,0,0,100,0,0,0],Cora:[100,100,0,0,0,125,100]}
-};
-function calcFixedR(b,s,e){let t=0;for(let d=new Date(s);d<=new Date(e);d.setDate(d.getDate()+1)){if(b==='CBD'&&d.getDay()===0)continue;t+=d.getDay()===0?FIXED[b].sun:FIXED[b].wk;}return t;}
-function calcLabourR(b,s,e){let t=0;for(let d=new Date(s);d<=new Date(e);d.setDate(d.getDate()+1)){if(b==='CBD'&&d.getDay()===0)continue;const dow=(d.getDay()+6)%7;Object.values(ROSTER[b]).forEach(w=>t+=w[dow]);}return t;}
+const CLOSE_TIME=20.5;
+const DOW_KEY=['sun','mon','tue','wed','thu','fri','sat'];
+
+function parseShiftTime(str){
+  if(!str||!str.trim())return null;
+  var s=str.trim().toLowerCase();
+  if(s==='closed')return CLOSE_TIME;
+  var parts=s.replace(':','.').split('.');
+  var h=parseInt(parts[0])||0;
+  var m=parseInt((parts[1]||'0').padEnd(2,'0'))||0;
+  return h+m/60;
+}
+function shiftHrs(shiftStr){
+  if(!shiftStr||!shiftStr.trim())return 0;
+  var parts=shiftStr.split('-');
+  if(parts.length<2)return 0;
+  var s=parseShiftTime(parts[0]),e=parseShiftTime(parts[1]);
+  if(s===null||e===null)return 0;
+  return Math.max(0,e-s);
+}
+function calcFixedR(b,s,e){
+  var t=0;
+  for(var d=new Date(s);d<=new Date(e);d.setDate(d.getDate()+1)){
+    if(b==='CBD'&&d.getDay()===0)continue;
+    t+=d.getDay()===0?FIXED[b].sun:FIXED[b].wk;
+  }
+  return t;
+}
+function calcLabourFromRoster(staffList,rosterRows,b,start,end){
+  var total=0;
+  var bStaff=staffList.filter(function(s){return s.branch===b||s.branch==='Both';});
+  for(var d=new Date(start);d<=new Date(end);d.setDate(d.getDate()+1)){
+    if(b==='CBD'&&d.getDay()===0)continue;
+    var dayKey=DOW_KEY[d.getDay()];
+    bStaff.forEach(function(staff){
+      rosterRows.filter(function(r){return r.staff_id===staff.id&&r.branch===b;}).forEach(function(row){
+        total+=shiftHrs(row[dayKey]||'')*(Number(staff.hourly_rate)||0);
+      });
+    });
+  }
+  return total;
+}
+
 async function loadPL(){
-  let start,end;
+  var start,end;
   if(plMode==='daily'){start=document.getElementById('plDay').value;if(!start)return;end=start;}
-  else if(plMode==='weekly'){start=document.getElementById('plWeek').value;if(!start)return;const e=new Date(start);e.setDate(e.getDate()+6);end=e.toISOString().split('T')[0];}
-  else{const m=document.getElementById('plMonth').value;if(!m)return;start=m+'-01';const e=new Date(start);e.setMonth(e.getMonth()+1);e.setDate(e.getDate()-1);end=e.toISOString().split('T')[0];}
+  else if(plMode==='weekly'){start=document.getElementById('plWeek').value;if(!start)return;var ew=new Date(start);ew.setDate(ew.getDate()+6);end=ew.toISOString().split('T')[0];}
+  else{var m=document.getElementById('plMonth').value;if(!m)return;start=m+'-01';var em=new Date(start);em.setMonth(em.getMonth()+1);em.setDate(em.getDate()-1);end=em.toISOString().split('T')[0];}
   document.getElementById('plOut').innerHTML='<div class="loading-msg">Loading...</div>';
   try{
-    const [sales,inv]=await Promise.all([sbSelect('sales','branch=eq.'+branch+'&date=gte.'+start+'&date=lte.'+end),sbSelect('invoices','branch=eq.'+branch+'&date=gte.'+start+'&date=lte.'+end)]);
+    var hdrs={'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY};
+    const [sales,inv,staffRes,rosterRes]=await Promise.all([
+      sbSelect('sales','branch=eq.'+branch+'&date=gte.'+start+'&date=lte.'+end),
+      sbSelect('invoices','branch=eq.'+branch+'&date=gte.'+start+'&date=lte.'+end),
+      fetch(SB_URL+'/rest/v1/staff?active=eq.true&select=id,name,branch,hourly_rate',{headers:hdrs}).then(function(r){return r.json();}),
+      fetch(SB_URL+'/rest/v1/roster?branch=eq.'+branch+'&select=staff_id,branch,mon,tue,wed,thu,fri,sat,sun',{headers:hdrs}).then(function(r){return r.json();})
+    ]);
     const net=sales.reduce((s,r)=>s+(r.net_total||0),0);
     const food=inv.reduce((s,r)=>s+(r.amount||0),0);
-    const labour=calcLabourR(branch,start,end),fixed=calcFixedR(branch,start,end);
+    const labour=calcLabourFromRoster(staffRes,rosterRes,branch,start,end);
+    const fixed=calcFixedR(branch,start,end);
     const gp=net-food-labour-fixed,tax=gp>0?gp*.33:0,np=gp-tax;
     const p=n=>net>0?'<span class="pct">'+((n/net)*100).toFixed(1)+'%</span>':'';
     const bc=(pv,tgt)=>pv<=tgt?'g':pv<=tgt*1.15?'a':'r';
@@ -344,7 +389,18 @@ async function loadRoster(){
       const posCol=pos==='BOH'?'var(--amber)':'var(--purple)';
       html+='<tr class="pos-hd"><td colspan="'+(bDays.length+1)+'" style="color:'+posCol+';font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase">'+pos+'</td></tr>';
       posStaff.forEach(s=>{
-        const rows=roster.filter(r=>r.staff_id===s.id&&r.branch===b).sort((a,c)=>(a.shift_num||1)-(c.shift_num||1));
+        const rows=roster.filter(r=>r.staff_id===s.id&&r.branch===b).sort((a,c)=>{
+          // Sort by earliest shift start time across any day, so morning row always comes first
+          function firstStart(row){
+            var t=Infinity;
+            ['mon','tue','wed','thu','fri','sat','sun'].forEach(function(d){
+              var v=(row[d]||'').trim();
+              if(v){var h=parseFloat(v.split('-')[0].replace(':','.'));if(!isNaN(h)&&h<t)t=h;}
+            });
+            return t===Infinity?(a.shift_num||1):t;
+          }
+          return firstStart(a)-firstStart(c);
+        });
         if(!rows.length)rows.push({shift_num:1,mon:'',tue:'',wed:'',thu:'',fri:'',sat:'',sun:''});
         rows.forEach((row,ri)=>{
           const cls=ri===0?'am':'pm';
@@ -366,77 +422,100 @@ async function loadRoster(){
 
 // INVOICE HISTORY
 function clearDateFilter(){document.getElementById('invHistDate').value='';loadInvHistory();}
+
+// Event delegation — one listener handles all card clicks
+document.addEventListener('click',function(e){
+  var head=e.target.closest('.inv-card-head');
+  if(head){
+    var card=head.closest('.inv-card');
+    var body=card.querySelector('.inv-card-body');
+    var arrow=head.querySelector('.inv-arrow');
+    var open=body.style.display==='block';
+    body.style.display=open?'none':'block';
+    if(arrow)arrow.textContent=open?'▾':'▴';
+    return;
+  }
+  var btn=e.target.closest('button[data-action]');
+  if(!btn)return;
+  var id=btn.dataset.id, action=btn.dataset.action;
+  if(action==='edit'){document.getElementById('iview-'+id).style.display='none';document.getElementById('iedit-'+id).style.display='block';}
+  if(action==='cancel'){document.getElementById('iview-'+id).style.display='block';document.getElementById('iedit-'+id).style.display='none';}
+  if(action==='save'){saveEditInv(id);}
+  if(action==='delete'){
+    var label=btn.dataset.label;
+    pendingDeleteId=id;
+    document.getElementById('confirmMsg').textContent='Delete invoice - '+label+'?';
+    document.getElementById('confirmOverlay').style.display='flex';
+    document.getElementById('confirmYes').onclick=async function(){
+      closeConfirm();
+      try{await sbDelete('invoices',pendingDeleteId);showToast('Invoice deleted');loadInvHistory();if(document.getElementById('tab-pl').style.display!=='none')loadPL();}
+      catch(ex){showToast('Error: '+ex.message,true);}
+    };
+  }
+});
+
 async function loadInvHistory(){
   document.getElementById('invHistBranch').textContent=branch;
-  const el=document.getElementById('invHistList');
+  var el=document.getElementById('invHistList');
   el.innerHTML='<div class="loading-msg">Loading...</div>';
-  const dv=document.getElementById('invHistDate').value;
-  const df=dv?'&date=eq.'+dv:'';
+  var dv=document.getElementById('invHistDate').value;
+  var df=dv?'&date=eq.'+dv:'';
   try{
-    const inv=await sbSelect('invoices','branch=eq.'+branch+df+'&order=date.desc&limit=30');
+    var inv=await sbSelect('invoices','branch=eq.'+branch+df+'&order=date.desc&limit=30');
     if(!inv.length){el.innerHTML='<div class="loading-msg">No invoices found.</div>';return;}
-    el.innerHTML=inv.map(i=>{
-      const sups=['Bid Food','Bid Fresh','Food Services','Service Food','Butchery','Supermarket','Drinks Supplier','Other'];
-      const optHtml=sups.map(s=>'<option'+(s===i.supplier?' selected':'')+'>'+s+'</option>').join('');
-      return '<div class="inv-card" id="icard-'+i.id+'">'+
-        '<div class="inv-card-head" onclick="toggleInvCard('+i.id+')">'+
-          '<div><div style="font-size:13px;font-weight:700">'+(i.supplier||'Unknown')+'</div>'+
-          '<div style="font-size:11px;color:var(--muted);margin-top:2px">'+i.date+' - '+(i.invoice_no||'No inv #')+'</div></div>'+
-          '<div style="display:flex;align-items:center;gap:10px"><span style="font-weight:800;color:var(--red)">-'+fmt(i.amount)+'</span><span style="color:var(--muted)">v</span></div>'+
-        '</div>'+
-        '<div class="inv-card-body">'+
-          '<div id="iview-'+i.id+'">'+
-            '<div class="inv-detail-row"><span>Date</span><span>'+i.date+'</span></div>'+
-            '<div class="inv-detail-row"><span>Supplier</span><span>'+(i.supplier||'-')+'</span></div>'+
-            '<div class="inv-detail-row"><span>Total</span><span>'+fmt(i.amount)+'</span></div>'+
-            '<div class="inv-detail-row"><span>Invoice No.</span><span>'+(i.invoice_no||'-')+'</span></div>'+
-            '<div class="inv-detail-row" style="border-bottom:none"><span>Notes</span><span>'+(i.notes||'-')+'</span></div>'+
-            '<div class="inv-actions">'+
-              '<button class="btn-sm btn-blue" onclick="showEditInv('+i.id+')">Edit</button>'+
-              '<button class="btn-sm btn-red" onclick="confirmDelete('+i.id+',\''+((i.supplier||'').replace(/'/g,"\\'"))+' '+i.date+'\')">Delete</button>'+
-            '</div>'+
-          '</div>'+
-          '<div id="iedit-'+i.id+'" style="display:none">'+
-            '<div class="inv-edit-form">'+
-              '<label>Date</label><input type="date" id="ed-date-'+i.id+'" value="'+i.date+'">'+
-              '<label>Supplier</label><select id="ed-sup-'+i.id+'">'+optHtml+'</select>'+
-              '<div class="edit-row2"><div><label>Total ($)</label><input type="number" id="ed-amt-'+i.id+'" value="'+(i.amount||'')+'"></div>'+
-              '<div><label>Invoice No.</label><input type="text" id="ed-no-'+i.id+'" value="'+(i.invoice_no||'')+'"></div></div>'+
-              '<label>Notes</label><textarea id="ed-notes-'+i.id+'" rows="2">'+(i.notes||'')+'</textarea>'+
-              '<div style="display:flex;gap:8px;margin-top:12px">'+
-                '<button class="btn-sm btn-green" onclick="saveEditInv('+i.id+')" style="flex:1;justify-content:center;padding:10px">Save</button>'+
-                '<button class="btn-sm" onclick="cancelEditInv('+i.id+')" style="flex:1;justify-content:center;padding:10px;background:var(--bg2);color:var(--muted);border:1px solid var(--border)">Cancel</button>'+
-              '</div>'+
-            '</div>'+
-          '</div>'+
-        '</div>'+
-      '</div>';
+    var sups=['Bid Food','Bid Fresh','Food Services','Service Food','Butchery','Supermarket','Drinks Supplier','Other'];
+    el.innerHTML=inv.map(function(i){
+      var optHtml=sups.map(function(s){return '<option'+(s===i.supplier?' selected':'')+'>'+s+'</option>';}).join('');
+      var label=(i.supplier||'Unknown')+' '+i.date;
+      return '<div class="inv-card" id="icard-'+i.id+'">'
+        +'<div class="inv-card-head">'
+          +'<div><div style="font-size:13px;font-weight:700">'+(i.supplier||'Unknown')+'</div>'
+          +'<div style="font-size:11px;color:var(--muted);margin-top:2px">'+i.date+' &middot; '+(i.invoice_no||'No inv #')+'</div></div>'
+          +'<div style="display:flex;align-items:center;gap:10px">'
+            +'<span style="font-weight:800;color:var(--red)">-'+fmt(i.amount)+'</span>'
+            +'<span class="inv-arrow" style="color:var(--cyan);font-size:18px;line-height:1">&#9660;</span>'
+          +'</div>'
+        +'</div>'
+        +'<div class="inv-card-body" style="display:none;padding:12px 14px 14px;border-top:1px solid var(--border)">'
+          +'<div id="iview-'+i.id+'">'
+            +'<div class="inv-detail-row"><span>Date</span><span>'+i.date+'</span></div>'
+            +'<div class="inv-detail-row"><span>Supplier</span><span>'+(i.supplier||'-')+'</span></div>'
+            +'<div class="inv-detail-row"><span>Total</span><span>'+fmt(i.amount)+'</span></div>'
+            +'<div class="inv-detail-row"><span>Invoice No.</span><span>'+(i.invoice_no||'-')+'</span></div>'
+            +'<div class="inv-detail-row" style="border-bottom:none"><span>Notes</span><span>'+(i.notes||'-')+'</span></div>'
+            +'<div class="inv-actions">'
+              +'<button class="btn-sm btn-blue" data-action="edit" data-id="'+i.id+'">&#9998; Edit</button>'
+              +'<button class="btn-sm btn-red" data-action="delete" data-id="'+i.id+'" data-label="'+label.replace(/"/g,'')+'">&#128465; Delete</button>'
+            +'</div>'
+          +'</div>'
+          +'<div id="iedit-'+i.id+'" style="display:none">'
+            +'<div class="inv-edit-form">'
+              +'<label>Date</label><input type="date" id="ed-date-'+i.id+'" value="'+i.date+'">'
+              +'<label>Supplier</label><select id="ed-sup-'+i.id+'">'+optHtml+'</select>'
+              +'<div class="edit-row2"><div><label>Total ($)</label><input type="number" id="ed-amt-'+i.id+'" value="'+(i.amount||'')+'"></div>'
+              +'<div><label>Invoice No.</label><input type="text" id="ed-no-'+i.id+'" value="'+(i.invoice_no||'')+'"></div></div>'
+              +'<label>Notes</label><textarea id="ed-notes-'+i.id+'" rows="2">'+(i.notes||'')+'</textarea>'
+              +'<div style="display:flex;gap:8px;margin-top:12px">'
+                +'<button class="btn-sm btn-green" data-action="save" data-id="'+i.id+'" style="flex:1;justify-content:center;padding:10px">&#10003; Save</button>'
+                +'<button class="btn-sm" data-action="cancel" data-id="'+i.id+'" style="flex:1;justify-content:center;padding:10px;background:var(--bg2);color:var(--muted);border:1px solid var(--border)">Cancel</button>'
+              +'</div>'
+            +'</div>'
+          +'</div>'
+        +'</div>'
+      +'</div>';
     }).join('');
-  }catch(e){el.innerHTML='<div class="loading-msg" style="color:var(--red)">Error: '+e.message+'</div>';}
+  }catch(ex){el.innerHTML='<div class="loading-msg" style="color:var(--red)">Error: '+ex.message+'</div>';}
 }
-function toggleInvCard(id){document.getElementById('icard-'+id).classList.toggle('open');}
-function showEditInv(id){document.getElementById('iview-'+id).style.display='none';document.getElementById('iedit-'+id).style.display='block';}
-function cancelEditInv(id){document.getElementById('iview-'+id).style.display='block';document.getElementById('iedit-'+id).style.display='none';}
 async function saveEditInv(id){
   try{
     const sup=document.getElementById('ed-sup-'+id).value;
     const fs=['Bid Food','Bid Fresh','Food Services','Service Food','Butchery'];
     await sbUpdate('invoices',id,{date:document.getElementById('ed-date-'+id).value,supplier:sup,category:fs.includes(sup)?'Food':'Other',supplier_group:fs.includes(sup)?'Food':'Other',amount:parseFloat(document.getElementById('ed-amt-'+id).value)||0,invoice_no:document.getElementById('ed-no-'+id).value,notes:document.getElementById('ed-notes-'+id).value});
-    showToast('Invoice updated');loadInvHistory();
+    showToast('Invoice updated');loadInvHistory();if(document.getElementById('tab-pl').style.display!=='none')loadPL();
   }catch(e){showToast('Error: '+e.message,true);}
 }
 
-let pendingDeleteId=null;
-function confirmDelete(id,label){
-  pendingDeleteId=id;
-  document.getElementById('confirmMsg').textContent='Delete invoice - '+label+'?';
-  document.getElementById('confirmOverlay').style.display='flex';
-  document.getElementById('confirmYes').onclick=async function(){
-    closeConfirm();
-    try{await sbDelete('invoices',pendingDeleteId);showToast('Invoice deleted');loadInvHistory();}
-    catch(e){showToast('Error: '+e.message,true);}
-  };
-}
+var pendingDeleteId=null;
 function closeConfirm(){document.getElementById('confirmOverlay').style.display='none';}
 
 // HISTORY TAB
@@ -528,7 +607,7 @@ async function saveInvoice(){
     if(!sup){showToast('Select a supplier',true);btn.disabled=false;btn.textContent='Save Invoice';return;}
     const fs=['Bid Food','Bid Fresh','Food Services','Service Food','Butchery'];
     await sbInsert('invoices',{branch:branch,date:document.getElementById('invDate').value,supplier:sup,supplier_group:fs.includes(sup)?'Food':'Other',category:fs.includes(sup)?'Food':'Other',amount:parseFloat(document.getElementById('invAmount').value)||0,invoice_no:document.getElementById('invNo').value,notes:document.getElementById('invNotes').value});
-    showToast('Invoice saved!');clearScan();loadInvHistory();
+    showToast('Invoice saved!');clearScan();loadInvHistory();if(document.getElementById('tab-pl').style.display!=='none')loadPL();
   }catch(e){showToast('Error: '+e.message,true);}
   btn.disabled=false;btn.textContent='Save Invoice';
 }
