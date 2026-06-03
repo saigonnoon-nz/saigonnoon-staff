@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Saigon Noon — Staff Portal</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
   :root {
     --bg:#080c14; --bg2:#0d1320; --bg3:#111827; --card:#0f1923;
@@ -228,12 +229,23 @@
 
   <!-- ROSTER TAB -->
   <div id="tab-roster" style="display:none">
-    <div class="card" style="overflow-x:auto;padding:14px 10px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-        <div id="rosterWeekHeading" style="font-size:12px;color:var(--muted);font-weight:600"></div>
-        <button class="btn-sm btn-blue" onclick="printRoster()" style="padding:8px 16px">&#128247; Print / Share</button>
+    <div class="card" style="padding:12px 10px">
+      <!-- Week navigation -->
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <button class="btn-sm" onclick="shiftStaffRosterWeek(-1)" style="background:var(--bg2);color:var(--muted);border:1px solid var(--border);padding:8px 12px;font-size:16px">&#8249;</button>
+        <div id="rosterWeekHeading" style="flex:1;text-align:center;font-size:12px;color:var(--cyan);font-weight:700"></div>
+        <button class="btn-sm" onclick="goToCurrentStaffWeek()" style="background:rgba(0,212,255,.08);color:var(--cyan);border:1px solid rgba(0,212,255,.3);padding:8px 10px;font-size:11px">Now</button>
+        <button class="btn-sm" onclick="shiftStaffRosterWeek(1)" style="background:var(--bg2);color:var(--muted);border:1px solid var(--border);padding:8px 12px;font-size:16px">&#8250;</button>
       </div>
-      <div id="rosterContent"><div class="loading-msg">Loading roster...</div></div>
+      <!-- Action buttons -->
+      <div style="display:flex;gap:8px;margin-bottom:14px">
+        <button class="btn-sm btn-blue" onclick="printRoster()" style="flex:1;justify-content:center;padding:9px">&#128247; Print / PDF</button>
+        <button class="btn-sm btn-purple" onclick="screenshotRoster()" style="flex:1;justify-content:center;padding:9px">&#128248; Screenshot</button>
+      </div>
+      <!-- Roster table -->
+      <div style="overflow-x:auto">
+        <div id="rosterContent"><div class="loading-msg">Loading roster...</div></div>
+      </div>
     </div>
   </div>
 </div>
@@ -388,19 +400,20 @@ function getDayDates(mondayStr, days) {
 
 async function loadRoster(){
   var el=document.getElementById('rosterContent');
-  var weekStr = getCurrentMonday();
+  var weekStr = staffRosterWeek;
   // Week heading
   var monDate = new Date(weekStr+'T00:00:00');
   var sunDate = new Date(monDate); sunDate.setDate(sunDate.getDate()+6);
   var fmtD = function(d){ return d.toLocaleDateString('en-NZ',{day:'numeric',month:'short'}); };
-  document.getElementById('rosterWeekHeading').textContent = 'Week: '+fmtD(monDate)+' – '+fmtD(sunDate);
+  var isCurrent = weekStr === getCurrentMonday();
+  document.getElementById('rosterWeekHeading').textContent = (isCurrent ? '📅 ' : '')+'Week: '+fmtD(monDate)+' – '+fmtD(sunDate)+(isCurrent?' (Current)':'');
 
   el.innerHTML='<div class="loading-msg">Loading roster...</div>';
   try{
     var hdrs={'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY};
     const [sRes,rRes]=await Promise.all([
       fetch(SB_URL+'/rest/v1/staff?active=eq.true&order=position,name&select=id,name,position,branch',{headers:hdrs}),
-      fetch(SB_URL+'/rest/v1/roster?week_start=eq.'+getCurrentMonday()+'&order=staff_id,shift_num&select=staff_id,branch,shift_num,mon,tue,wed,thu,fri,sat,sun',{headers:hdrs})
+      fetch(SB_URL+'/rest/v1/roster?week_start=eq.'+staffRosterWeek+'&order=staff_id,shift_num&select=staff_id,branch,shift_num,mon,tue,wed,thu,fri,sat,sun',{headers:hdrs})
     ]);
     var staff=await sRes.json(), roster=await rRes.json();
     var b=branch;
@@ -493,6 +506,56 @@ function printRoster(){
     '<br><button class="btn" onclick="window.print()">🖨 Print / Save as PDF</button>'+
     '</body></html>');
   win.document.close();
+}
+
+// SCREENSHOT ROSTER
+async function screenshotRoster() {
+  var el = document.getElementById('rosterContent');
+  if (!el || typeof html2canvas === 'undefined') { showToast('Screenshot not available', true); return; }
+  showToast('Capturing screenshot...');
+  try {
+    // Wrap in a styled container for the screenshot
+    var wrapper = document.createElement('div');
+    wrapper.style.cssText = 'background:#0f1923;padding:16px;border-radius:12px;display:inline-block;min-width:100%';
+    
+    // Add header
+    var header = document.createElement('div');
+    header.style.cssText = 'color:#00d4ff;font-weight:800;font-size:14px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #1e2d40;font-family:Arial,sans-serif';
+    header.textContent = '🍜 Saigon Noon – ' + branch + ' Roster';
+    wrapper.appendChild(header);
+    
+    var subheader = document.createElement('div');
+    subheader.style.cssText = 'color:#5a7a99;font-size:11px;margin-bottom:12px;font-family:Arial,sans-serif';
+    subheader.textContent = document.getElementById('rosterWeekHeading').textContent;
+    wrapper.appendChild(subheader);
+    
+    var clone = el.cloneNode(true);
+    wrapper.appendChild(clone);
+    
+    // Temporarily add to body for rendering
+    wrapper.style.position = 'fixed';
+    wrapper.style.left = '-9999px';
+    wrapper.style.top = '0';
+    document.body.appendChild(wrapper);
+    
+    var canvas = await html2canvas(wrapper, {
+      backgroundColor: '#0f1923',
+      scale: 2,
+      useCORS: true,
+      allowTaint: true
+    });
+    document.body.removeChild(wrapper);
+    
+    // Download
+    var link = document.createElement('a');
+    var weekStr = staffRosterWeek.replace(/-/g, '');
+    link.download = 'SaigonNoon_'+branch+'_Roster_'+weekStr+'.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    showToast('Screenshot saved!');
+  } catch(e) {
+    showToast('Screenshot failed: '+e.message, true);
+  }
 }
 
 // INVOICE HISTORY
@@ -672,6 +735,18 @@ function getMonday(d){
   return y+'-'+m+'-'+day;
 }
 function getCurrentMonday(){return getMonday(new Date());}
+var staffRosterWeek = getCurrentMonday();
+
+function shiftStaffRosterWeek(dir) {
+  var d = new Date(staffRosterWeek+'T12:00:00');
+  d.setDate(d.getDate() + dir*7);
+  staffRosterWeek = getMonday(d);
+  loadRoster();
+}
+function goToCurrentStaffWeek() {
+  staffRosterWeek = getCurrentMonday();
+  loadRoster();
+}
 
 // INVOICE SCANNER
 function onFileSelect(e){const f=e.target.files[0];if(f)handleFile(f);e.target.value='';}
