@@ -214,8 +214,16 @@
 
   <!-- HISTORY TAB -->
   <div id="tab-history" style="display:none">
-    <div class="card"><h2>Recent Sales</h2><div id="hSales"><div class="loading-msg">Loading...</div></div></div>
-    <div class="card" style="margin-top:12px"><h2>Recent Invoices</h2><div id="hInv"><div class="loading-msg">Loading...</div></div></div>
+    <div class="card">
+      <h2>📋 History — <span id="histBranch" style="color:var(--muted)">CBD</span></h2>
+      <div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:0">
+        <div style="flex:1"><label style="margin-top:0">Date</label><input type="date" id="histDate"></div>
+        <button class="btn-sm btn-blue" onclick="loadHistory()" style="margin-bottom:1px;padding:10px 14px">Load</button>
+        <button class="btn-sm" onclick="document.getElementById('histDate').value='';loadHistory()" style="margin-bottom:1px;padding:10px 14px;background:var(--bg2);color:var(--muted);border:1px solid var(--border)">All</button>
+      </div>
+    </div>
+    <div class="card"><h2>💰 Sales</h2><div id="hSales"><div class="loading-msg">Select a date above</div></div></div>
+    <div class="card" style="margin-top:12px"><h2>🧾 Invoices</h2><div id="hInv"><div class="loading-msg">Select a date above</div></div></div>
   </div>
 
   <!-- ROSTER TAB -->
@@ -259,14 +267,15 @@ function setBranch(b){
   branch=b;
   document.getElementById('bCBD').classList.toggle('active',b==='CBD');
   document.getElementById('bRot').classList.toggle('active',b==='Rototuna');
-  if(document.getElementById('tab-history').style.display!=='none')loadHistory();
+  if(document.getElementById('tab-history').style.display!=='none'){document.getElementById('histBranch').textContent=branch;loadHistory();}
   if(document.getElementById('tab-pl').style.display!=='none')loadPL();
   if(document.getElementById('tab-roster').style.display!=='none')loadRoster();
+  if(document.getElementById('tab-invoice').style.display!=='none')loadInvHistory();
 }
 function showTab(name){
   ['invoice','sales','pl','history','roster'].forEach(t=>document.getElementById('tab-'+t).style.display=t===name?'block':'none');
   document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['invoice','sales','pl','history','roster'][i]===name));
-  if(name==='history')loadHistory();
+  if(name==='history'){document.getElementById('histBranch').textContent=branch;loadHistory();}
   if(name==='pl')loadPL();
   if(name==='roster')loadRoster();
 }
@@ -519,13 +528,56 @@ var pendingDeleteId=null;
 function closeConfirm(){document.getElementById('confirmOverlay').style.display='none';}
 
 // HISTORY TAB
+function fmtTS(ts){
+  if(!ts)return'';
+  try{
+    var d=new Date(ts);
+    return d.toLocaleDateString('en-NZ',{day:'2-digit',month:'short',year:'numeric'})+' '+
+           d.toLocaleTimeString('en-NZ',{hour:'2-digit',minute:'2-digit',hour12:true});
+  }catch(e){return ts;}
+}
 async function loadHistory(){
+  document.getElementById('histBranch').textContent=branch;
   document.getElementById('hSales').innerHTML='<div class="loading-msg">Loading...</div>';
   document.getElementById('hInv').innerHTML='<div class="loading-msg">Loading...</div>';
+  var dv=document.getElementById('histDate').value;
+  var df=dv?'&date=eq.'+dv:'';
   try{
-    const [sales,inv]=await Promise.all([sbSelect('sales','branch=eq.'+branch+'&order=date.desc&limit=10'),sbSelect('invoices','branch=eq.'+branch+'&order=date.desc&limit=10')]);
-    document.getElementById('hSales').innerHTML=sales.length?sales.map(s=>'<div class="hist-item"><div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">'+s.date+'</span><span class="hist-amt pos">Net '+fmt(s.net_total)+'</span></div><div class="hist-meta">In-house $'+(s.inhouse||0).toFixed(0)+' - Uber $'+(s.uber||0).toFixed(0)+' - DD $'+(s.doordash||0).toFixed(0)+' - B&O $'+(s.booknorders||0).toFixed(0)+'</div></div>').join(''):'<div class="loading-msg">No sales yet.</div>';
-    document.getElementById('hInv').innerHTML=inv.length?inv.map(i=>'<div class="hist-item"><div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">'+i.date+' - '+(i.supplier||'?')+'</span><span class="hist-amt neg">-'+fmt(i.amount)+'</span></div><div class="hist-meta">'+(i.invoice_no||'No inv #')+' - '+(i.notes||'')+'</div></div>').join(''):'<div class="loading-msg">No invoices yet.</div>';
+    const [sales,inv]=await Promise.all([
+      sbSelect('sales','branch=eq.'+branch+df+'&order=date.desc,created_at.desc&limit=30&select=*'),
+      sbSelect('invoices','branch=eq.'+branch+df+'&order=date.desc,created_at.desc&limit=30&select=*')
+    ]);
+    document.getElementById('hSales').innerHTML=sales.length?sales.map(s=>
+      '<div class="hist-item">'+
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start">'+
+          '<div>'+
+            '<div style="font-weight:700;font-size:13px">'+s.date+'</div>'+
+            '<div class="hist-meta" style="margin-top:2px">🕐 '+fmtTS(s.created_at)+'</div>'+
+          '</div>'+
+          '<span class="hist-amt pos">Net '+fmt(s.net_total)+'</span>'+
+        '</div>'+
+        '<div class="hist-meta" style="margin-top:5px">'+
+          'In-house <strong>$'+(s.inhouse||0).toFixed(0)+'</strong> &nbsp;·&nbsp; '+
+          'Uber <strong>$'+(s.uber||0).toFixed(0)+'</strong> &nbsp;·&nbsp; '+
+          'DD <strong>$'+(s.doordash||0).toFixed(0)+'</strong> &nbsp;·&nbsp; '+
+          'B&O <strong>$'+(s.booknorders||0).toFixed(0)+'</strong>'+
+          (s.notes?'<br>'+s.notes:'')+'</div>'+
+      '</div>'
+    ).join(''):'<div class="loading-msg">No sales found.</div>';
+
+    document.getElementById('hInv').innerHTML=inv.length?inv.map(i=>
+      '<div class="hist-item">'+
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start">'+
+          '<div>'+
+            '<div style="font-weight:700;font-size:13px">'+(i.supplier||'Unknown')+'</div>'+
+            '<div class="hist-meta" style="margin-top:2px">'+i.date+' &nbsp;·&nbsp; '+(i.invoice_no||'No inv #')+'</div>'+
+            '<div class="hist-meta">🕐 '+fmtTS(i.created_at)+'</div>'+
+          '</div>'+
+          '<span class="hist-amt neg">-'+fmt(i.amount)+'</span>'+
+        '</div>'+
+        (i.notes?'<div class="hist-meta" style="margin-top:4px">'+i.notes+'</div>':'')+
+      '</div>'
+    ).join(''):'<div class="loading-msg">No invoices found.</div>';
   }catch(e){document.getElementById('hSales').innerHTML='<div class="loading-msg" style="color:var(--red)">Error: '+e.message+'</div>';}
 }
 
@@ -535,6 +587,7 @@ window.addEventListener('DOMContentLoaded',function(){
   document.getElementById('salesDate').value=today;
   document.getElementById('invDate').value=today;
   document.getElementById('invHistDate').value=today;
+  document.getElementById('histDate').value=today;
   document.getElementById('plDay').value=today;
   document.getElementById('plWeek').value=getMonday(new Date());
   document.getElementById('plMonth').value=today.slice(0,7);
