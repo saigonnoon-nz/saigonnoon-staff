@@ -229,6 +229,10 @@
   <!-- ROSTER TAB -->
   <div id="tab-roster" style="display:none">
     <div class="card" style="overflow-x:auto;padding:14px 10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+        <div id="rosterWeekHeading" style="font-size:12px;color:var(--muted);font-weight:600"></div>
+        <button class="btn-sm btn-blue" onclick="printRoster()" style="padding:8px 16px">&#128247; Print / Share</button>
+      </div>
       <div id="rosterContent"><div class="loading-msg">Loading roster...</div></div>
     </div>
   </div>
@@ -373,60 +377,122 @@ async function loadPL(){
 function bar(lbl,pv,tgt,cls){return'<div class="bar-lbl"><span>'+lbl+'</span><span>'+pv.toFixed(1)+'% / target '+tgt+'%</span></div><div class="bar-track"><div class="bar-fill '+cls+'" style="width:'+Math.min(pv,100)+'%"></div></div>';}
 
 // ROSTER
+function getDayDates(mondayStr, days) {
+  var mon = new Date(mondayStr+'T00:00:00');
+  var dayMap = {mon:0,tue:1,wed:2,thu:3,fri:4,sat:5,sun:6};
+  return days.map(function(d) {
+    var dt = new Date(mon); dt.setDate(dt.getDate()+dayMap[d]);
+    return dt.getDate()+'/'+(dt.getMonth()+1);
+  });
+}
+
 async function loadRoster(){
-  const el=document.getElementById('rosterContent');
+  var el=document.getElementById('rosterContent');
+  var weekStr = getCurrentMonday();
+  // Week heading
+  var monDate = new Date(weekStr+'T00:00:00');
+  var sunDate = new Date(monDate); sunDate.setDate(sunDate.getDate()+6);
+  var fmtD = function(d){ return d.toLocaleDateString('en-NZ',{day:'numeric',month:'short'}); };
+  document.getElementById('rosterWeekHeading').textContent = 'Week: '+fmtD(monDate)+' – '+fmtD(sunDate);
+
   el.innerHTML='<div class="loading-msg">Loading roster...</div>';
   try{
-    const hdrs={'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY};
+    var hdrs={'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY};
     const [sRes,rRes]=await Promise.all([
       fetch(SB_URL+'/rest/v1/staff?active=eq.true&order=position,name&select=id,name,position,branch',{headers:hdrs}),
-      fetch(SB_URL+'/rest/v1/roster?order=staff_id,shift_num&select=staff_id,branch,shift_num,mon,tue,wed,thu,fri,sat,sun',{headers:hdrs})
+      fetch(SB_URL+'/rest/v1/roster?week_start=eq.'+getCurrentMonday()+'&order=staff_id,shift_num&select=staff_id,branch,shift_num,mon,tue,wed,thu,fri,sat,sun',{headers:hdrs})
     ]);
-    const staff=await sRes.json(),roster=await rRes.json();
-    const b=branch;
-    const bStaff=staff.filter(s=>s.branch===b||s.branch==='Both');
-    const bDays=b==='CBD'?['mon','tue','wed','thu','fri','sat']:['mon','tue','wed','thu','fri','sat','sun'];
-    const dayLbl={mon:'Mon',tue:'Tue',wed:'Wed',thu:'Thu',fri:'Fri',sat:'Sat',sun:'Sun'};
-    const col=b==='CBD'?'var(--cyan)':'var(--purple)';
-    let html='<div style="font-size:14px;font-weight:800;color:'+col+';margin-bottom:14px;padding-bottom:10px;border-bottom:2px solid var(--border)">'+
-      b+' Roster <span style="color:var(--muted);font-size:11px;font-weight:500">'+(b==='CBD'?'Mon-Sat':'Mon-Sun')+'</span></div>';
-    if(!bStaff.length){el.innerHTML=html+'<div class="loading-msg">No staff for this branch.</div>';return;}
-    html+='<table class="rtable"><thead><tr><th class="nc">Staff</th>'+bDays.map(d=>'<th>'+dayLbl[d]+'</th>').join('')+'</tr></thead><tbody>';
-    ['BOH','FOH'].forEach(pos=>{
-      const posStaff=bStaff.filter(s=>s.position===pos);
+    var staff=await sRes.json(), roster=await rRes.json();
+    var b=branch;
+    var bStaff=staff.filter(function(s){return s.branch===b||s.branch==='Both';});
+    var bDays=b==='CBD'?['mon','tue','wed','thu','fri','sat']:['mon','tue','wed','thu','fri','sat','sun'];
+    var dayLbl={mon:'Mon',tue:'Tue',wed:'Wed',thu:'Thu',fri:'Fri',sat:'Sat',sun:'Sun'};
+    var dayDates=getDayDates(weekStr,bDays);
+    var col=b==='CBD'?'var(--cyan)':'var(--purple)';
+
+    if(!bStaff.length){el.innerHTML='<div class="loading-msg">No staff for this branch.</div>';return;}
+
+    var html='<table class="rtable"><thead><tr>'+
+      '<th class="nc">Staff</th>'+
+      bDays.map(function(d,i){return '<th>'+dayLbl[d]+'<br><span style="font-size:10px;color:var(--muted);font-weight:500">'+dayDates[i]+'</span></th>';}).join('')+
+      '</tr></thead><tbody>';
+
+    ['BOH','FOH'].forEach(function(pos){
+      var posStaff=bStaff.filter(function(s){return s.position===pos;});
       if(!posStaff.length)return;
-      const posCol=pos==='BOH'?'var(--amber)':'var(--purple)';
-      html+='<tr class="pos-hd"><td colspan="'+(bDays.length+1)+'" style="color:'+posCol+';font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase">'+pos+'</td></tr>';
-      posStaff.forEach(s=>{
-        const rows=roster.filter(r=>r.staff_id===s.id&&r.branch===b).sort((a,c)=>{
-          // Sort by earliest shift start time across any day, so morning row always comes first
-          function firstStart(row){
-            var t=Infinity;
-            ['mon','tue','wed','thu','fri','sat','sun'].forEach(function(d){
-              var v=(row[d]||'').trim();
-              if(v){var h=parseFloat(v.split('-')[0].replace(':','.'));if(!isNaN(h)&&h<t)t=h;}
-            });
-            return t===Infinity?(a.shift_num||1):t;
-          }
-          return firstStart(a)-firstStart(c);
-        });
-        if(!rows.length)rows.push({shift_num:1,mon:'',tue:'',wed:'',thu:'',fri:'',sat:'',sun:''});
-        rows.forEach((row,ri)=>{
-          const cls=ri===0?'am':'pm';
+      var posCol=pos==='BOH'?'var(--amber)':'var(--purple)';
+      html+='<tr class="pos-hd"><td colspan="'+(bDays.length+1)+'" style="color:'+posCol+';font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;padding:8px 12px">'+
+        pos+' — '+(pos==='BOH'?'Back of House':'Front of House')+'</td></tr>';
+
+      posStaff.forEach(function(s){
+        var rows=roster.filter(function(r){return r.staff_id===s.id&&r.branch===b;})
+          .sort(function(a,c){
+            function firstStart(row){
+              var t=Infinity;
+              ['mon','tue','wed','thu','fri','sat','sun'].forEach(function(d){
+                var v=(row[d]||'').trim();
+                if(v){var h=parseFloat(v.split('-')[0].replace(':','.'));if(!isNaN(h)&&h<t)t=h;}
+              });
+              return t===Infinity?(row.shift_num||1):t;
+            }
+            return firstStart(a)-firstStart(c);
+          });
+        if(!rows.length)rows=[{shift_num:1,mon:'',tue:'',wed:'',thu:'',fri:'',sat:'',sun:''}];
+
+        rows.forEach(function(row,ri){
+          var cls=ri===0?'am':'pm';
           html+='<tr class="'+cls+'">';
-          html+='<td class="nc">'+(ri===0?'<strong>'+s.name+'</strong>':'<span style="font-size:11px;color:var(--amber);padding-left:6px">am/pm split</span>')+'</td>';
-          bDays.forEach(d=>{
-            const val=(row[d]||'').trim();
-            const isCls=val.toLowerCase().includes('closed');
-            html+='<td>'+(val?'<span class="'+(isCls?'shift-cls':'shift-val')+'">'+val+'</span>':'<span class="shift-nil">-</span>')+'</td>';
+          html+='<td class="nc">'+(ri===0?'<strong>'+s.name+'</strong>':'<span style="font-size:11px;color:var(--amber);padding-left:8px">↳ split</span>')+'</td>';
+          bDays.forEach(function(d){
+            var val=(row[d]||'').trim();
+            var isCls=val.toLowerCase().includes('closed');
+            html+='<td>'+(val?'<span class="'+(isCls?'shift-cls':'shift-val')+'">'+val+'</span>':'<span class="shift-nil">—</span>')+'</td>';
           });
           html+='</tr>';
         });
       });
     });
+
     html+='</tbody></table>';
     el.innerHTML=html;
   }catch(e){el.innerHTML='<div class="loading-msg" style="color:var(--red)">Error: '+e.message+'</div>';}
+}
+
+// PRINT ROSTER
+function printRoster(){
+  var weekStr=getCurrentMonday();
+  var monDate=new Date(weekStr+'T00:00:00');
+  var sunDate=new Date(monDate); sunDate.setDate(sunDate.getDate()+6);
+  var fmtD=function(d){return d.toLocaleDateString('en-NZ',{day:'numeric',month:'short',year:'numeric'});};
+  var weekLabel='Week of '+fmtD(monDate)+' – '+fmtD(sunDate);
+  var tbl=document.getElementById('rosterContent').innerHTML;
+  var win=window.open('','_blank');
+  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8">'+
+    '<title>Saigon Noon Roster – '+weekLabel+'</title>'+
+    '<style>'+
+      'body{font-family:Arial,sans-serif;padding:24px;color:#111;background:#fff;}'+
+      'h1{font-size:18px;margin-bottom:4px;}'+
+      'h2{font-size:14px;color:#555;font-weight:400;margin-bottom:20px;}'+
+      'table{width:100%;border-collapse:collapse;font-size:12px;}'+
+      'th{background:#1a1a2e;color:#00d4ff;padding:10px 8px;text-align:center;border:1px solid #ccc;font-size:11px;text-transform:uppercase;letter-spacing:.5px;}'+
+      'th.nc{text-align:left;padding-left:12px;min-width:100px;}'+
+      'td{padding:9px 8px;text-align:center;border:1px solid #ddd;font-size:12px;}'+
+      'td.nc{text-align:left;padding-left:12px;}'+
+      'tr.am td{background:#f8f8f8;}'+
+      'tr.pm td{background:#fffbf0;}'+
+      'tr.pos-hd td{background:#eef;color:#333;font-weight:800;font-size:11px;text-transform:uppercase;letter-spacing:1px;}'+
+      '.shift-val{font-weight:700;color:#111;}'+
+      '.shift-cls{font-weight:700;color:#e67e22;}'+
+      '.shift-nil{color:#ccc;}'+
+      '.btn{margin:20px 0 0;padding:10px 24px;background:#1a1a2e;color:white;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;}'+
+      '@media print{.btn{display:none;}}'+
+    '</style></head><body>'+
+    '<h1>🍜 Saigon Noon — '+branch+' Roster</h1>'+
+    '<h2>'+weekLabel+'</h2>'+
+    tbl+
+    '<br><button class="btn" onclick="window.print()">🖨 Print / Save as PDF</button>'+
+    '</body></html>');
+  win.document.close();
 }
 
 // INVOICE HISTORY
@@ -601,6 +667,7 @@ window.addEventListener('DOMContentLoaded',function(){
   document.getElementById('invHistList').innerHTML='<div class="loading-msg" style="color:var(--muted)">Select a date and tap Load</div>';
 });
 function getMonday(d){const c=new Date(d);c.setDate(c.getDate()-((c.getDay()+6)%7));return c.toISOString().split('T')[0];}
+function getCurrentMonday(){return getMonday(new Date());}
 
 // INVOICE SCANNER
 function onFileSelect(e){const f=e.target.files[0];if(f)handleFile(f);e.target.value='';}
