@@ -666,7 +666,11 @@ window.addEventListener('DOMContentLoaded',function(){
   // Don't auto-load — user taps Load button
   document.getElementById('invHistList').innerHTML='<div class="loading-msg" style="color:var(--muted)">Select a date and tap Load</div>';
 });
-function getMonday(d){const c=new Date(d);c.setDate(c.getDate()-((c.getDay()+6)%7));return c.toISOString().split('T')[0];}
+function getMonday(d){
+  const c=new Date(d); c.setDate(c.getDate()-((c.getDay()+6)%7));
+  var y=c.getFullYear(),m=String(c.getMonth()+1).padStart(2,'0'),day=String(c.getDate()).padStart(2,'0');
+  return y+'-'+m+'-'+day;
+}
 function getCurrentMonday(){return getMonday(new Date());}
 
 // INVOICE SCANNER
