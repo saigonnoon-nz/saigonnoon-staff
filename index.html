@@ -367,7 +367,7 @@ async function loadPL(){
     const food=inv.reduce((s,r)=>s+(r.amount||0),0);
     const labour=calcLabourFromRoster(staffRes,rosterRes,branch,start,end);
     const fixed=calcFixedR(branch,start,end);
-    const gp=net-food-labour-fixed,tax=gp>0?gp*.33:0,np=gp-tax;
+    const gp=net-food-labour-fixed,tax=gp>0?gp*.28:0,np=gp-tax;
     const p=n=>net>0?'<span class="pct">'+((n/net)*100).toFixed(1)+'%</span>':'';
     const bc=(pv,tgt)=>pv<=tgt?'g':pv<=tgt*1.15?'a':'r';
     const fp=net>0?(food/net)*100:0,lp=net>0?(labour/net)*100:0,xp=net>0?(fixed/net)*100:0;
@@ -381,7 +381,7 @@ async function loadPL(){
       '<div class="pl-row"><span class="lbl">Fixed '+p(fixed)+'</span><span>'+fmt(fixed)+'</span></div>'+
       '<div class="pl-row hd"><span>PROFIT</span></div>'+
       '<div class="pl-row"><span class="lbl">Gross Profit</span><span class="'+(gp>=0?'pos':'neg')+'">'+fmt(gp)+'</span></div>'+
-      '<div class="pl-row"><span class="lbl">Tax (33%)</span><span>-'+fmt(tax)+'</span></div>'+
+      '<div class="pl-row"><span class="lbl">Tax (28%)</span><span>-'+fmt(tax)+'</span></div>'+
       '<div class="pl-row big"><span>Net Profit</span><span class="'+(np>=0?'pos':'neg')+'">'+fmt(np)+'</span></div>'+
       '<div class="bar-wrap">'+bar('Food',fp,30,bc(fp,30))+bar('Labour',lp,35,bc(lp,35))+bar('Fixed',xp,25,bc(xp,25))+'</div></div>';
   }catch(e){document.getElementById('plOut').innerHTML='<div class="loading-msg" style="color:var(--red)">Error: '+e.message+'</div>';}
