@@ -611,9 +611,10 @@ async function loadInvHistory(){
   var el=document.getElementById('invHistList');
   el.innerHTML='<div class="loading-msg">Loading...</div>';
   var dv=document.getElementById('invHistDate').value;
-  var df=dv?'&date=eq.'+dv:'';
+  // Filter by entry date (created_at) so camera-scanned invoices with old dates still show up
+  var df=dv?'&created_at=gte.'+dv+'T00:00:00&created_at=lte.'+dv+'T23:59:59':'';
   try{
-    var inv=await sbSelect('invoices','branch=eq.'+branch+df+'&order=date.desc&limit=30');
+    var inv=await sbSelect('invoices','branch=eq.'+branch+df+'&order=created_at.desc&limit=30');
     if(!inv.length){el.innerHTML='<div class="loading-msg">No invoices found.</div>';return;}
     var sups=['Bid Food','Bid Fresh','Food Services','Service Food','Butchery','Supermarket','Drinks Supplier','Other'];
     el.innerHTML=inv.map(function(i){
@@ -775,13 +776,14 @@ async function loadHistory(){
 
 // INIT
 window.addEventListener('DOMContentLoaded',function(){
-  const today=new Date().toISOString().split('T')[0];
+  var _now=new Date();
+  var today=_now.getFullYear()+'-'+String(_now.getMonth()+1).padStart(2,'0')+'-'+String(_now.getDate()).padStart(2,'0');
   document.getElementById('salesDate').value=today;
   document.getElementById('invDate').value=today;
   document.getElementById('invHistDate').value=today;
   document.getElementById('histDate').value=today;
   document.getElementById('plDay').value=today;
-  document.getElementById('plWeek').value=getMonday(new Date());
+  document.getElementById('plWeek').value=getCurrentMonday();
   document.getElementById('plMonth').value=today.slice(0,7);
   // Check connection with a 5s timeout, non-blocking
   var ctrl=new AbortController();
