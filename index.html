@@ -354,8 +354,8 @@ function calcLabourFromRoster(staffList,rosterRows,b,start,end){
 async function loadPL(){
   var start,end;
   if(plMode==='daily'){start=document.getElementById('plDay').value;if(!start)return;end=start;}
-  else if(plMode==='weekly'){start=document.getElementById('plWeek').value;if(!start)return;var ew=new Date(start);ew.setDate(ew.getDate()+6);end=ew.toISOString().split('T')[0];}
-  else{var m=document.getElementById('plMonth').value;if(!m)return;start=m+'-01';var em=new Date(start);em.setMonth(em.getMonth()+1);em.setDate(em.getDate()-1);end=em.toISOString().split('T')[0];}
+  else if(plMode==='weekly'){start=document.getElementById('plWeek').value;if(!start)return;var ew=new Date(start+'T12:00:00');ew.setDate(ew.getDate()+6);end=localDate(ew);}
+  else{var m=document.getElementById('plMonth').value;if(!m)return;start=m+'-01';var em=new Date(start+'T12:00:00');em.setMonth(em.getMonth()+1);em.setDate(em.getDate()-1);end=localDate(em);}
   document.getElementById('plOut').innerHTML='<div class="loading-msg">Loading...</div>';
   try{
     var hdrs={'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY};
@@ -795,6 +795,9 @@ window.addEventListener('DOMContentLoaded',function(){
   // Don't auto-load — user taps Load button
   document.getElementById('invHistList').innerHTML='<div class="loading-msg" style="color:var(--muted)">Select a date and tap Load</div>';
 });
+function localDate(d){
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
 function getMonday(d){
   const c=new Date(d); c.setDate(c.getDate()-((c.getDay()+6)%7));
   var y=c.getFullYear(),m=String(c.getMonth()+1).padStart(2,'0'),day=String(c.getDate()).padStart(2,'0');
