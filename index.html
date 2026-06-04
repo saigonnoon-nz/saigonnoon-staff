@@ -613,8 +613,7 @@ async function loadInvHistory(){
   var el=document.getElementById('invHistList');
   el.innerHTML='<div class="loading-msg">Loading...</div>';
   var dv=document.getElementById('invHistDate').value;
-  // Filter by entry date (created_at) so camera-scanned invoices with old dates still show up
-  var df=dv?'&created_at=gte.'+dv+'T00:00:00&created_at=lte.'+dv+'T23:59:59':'';
+  var df=dv?'&date=eq.'+dv:'';
   try{
     var inv=await sbSelect('invoices','branch=eq.'+branch+df+'&order=created_at.desc&limit=30');
     if(!inv.length){el.innerHTML='<div class="loading-msg">No invoices found.</div>';return;}
@@ -709,7 +708,7 @@ async function loadHistory(){
   try{
     const [sales,inv]=await Promise.all([
       sbSelect('sales','branch=eq.'+branch+df+'&order=date.desc,created_at.desc&limit=30&select=*'),
-      sbSelect('invoices','branch=eq.'+branch+df+'&order=date.desc,created_at.desc&limit=30&select=*')
+      sbSelect('invoices','branch=eq.'+branch+df+'&order=created_at.desc&limit=50')
     ]);
     document.getElementById('hSales').innerHTML=sales.length?sales.map(function(s){
       return '<div class="inv-card" id="scard-'+s.id+'">'+
@@ -850,7 +849,7 @@ async function scanInvoice(){
     const data=await res.json();const text=data.content[0].text.trim();
     let parsed;
     try{parsed=JSON.parse(text);}catch(x){const m=text.match(/\{[\s\S]*\}/);if(m)parsed=JSON.parse(m[0]);else throw new Error('Could not parse AI response');}
-    if(parsed.date)document.getElementById('invDate').value=parsed.date;
+    // Date stays as today — don't overwrite with supplier's invoice date
     if(parsed.supplier){const sel=document.getElementById('invSupplier');const opts=Array.from(sel.options).map(function(o){return o.value;});const m=opts.find(function(o){return o.toLowerCase().includes((parsed.supplier||'').toLowerCase().split(' ')[0]);});sel.value=m||'';}
     if(parsed.total_amount)document.getElementById('invAmount').value=parsed.total_amount;
     if(parsed.gst_amount)document.getElementById('invGST').value=parsed.gst_amount;
