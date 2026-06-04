@@ -37,6 +37,8 @@
   label { display:block; font-size:11px; color:var(--muted); margin:12px 0 5px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; }
   input,select,textarea { width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:8px; font-size:14px; outline:none; transition:border .15s; background:var(--bg2); color:var(--text); }
   input:focus,select:focus,textarea:focus { border-color:var(--cyan); box-shadow:0 0 0 3px rgba(0,212,255,.1); }
+  input[type='date']::-webkit-calendar-picker-indicator,
+  input[type='month']::-webkit-calendar-picker-indicator { filter:brightness(0) invert(1); opacity:.8; cursor:pointer; }
   select option { background:var(--bg3); }
   .btn { display:block; width:100%; padding:13px; background:linear-gradient(135deg,var(--cyan2),var(--cyan)); color:#080c14; border:none; border-radius:8px; font-size:14px; font-weight:800; cursor:pointer; margin-top:14px; letter-spacing:.5px; transition:all .15s; }
   .btn:hover { box-shadow:0 0 24px rgba(0,212,255,.4); transform:translateY(-1px); }
@@ -869,6 +871,12 @@ async function saveInvoice(){
   try{
     const sup=document.getElementById('invSupplier').value;
     if(!sup){showToast('Select a supplier',true);btn.disabled=false;btn.textContent='Save Invoice';return;}
+    // Duplicate guard: same branch+supplier+amount saved within last 3 minutes
+    const amt=parseFloat(document.getElementById('invAmount').value)||0;
+    const dt=document.getElementById('invDate').value;
+    const ago=new Date(Date.now()-180000).toISOString();
+    const dupes=await sbSelect('invoices','branch=eq.'+branch+'&supplier=eq.'+encodeURIComponent(sup)+'&amount=eq.'+amt+'&created_at=gte.'+ago+'&limit=1');
+    if(dupes&&dupes.length>0){showToast('Duplicate — this invoice was just saved',true);btn.disabled=false;btn.textContent='Save Invoice';return;}
     const fs=['Bid Food','Bid Fresh','Food Services','Service Food','Butchery'];
     await sbInsert('invoices',{branch:branch,date:document.getElementById('invDate').value,supplier:sup,supplier_group:fs.includes(sup)?'Food':'Other',category:fs.includes(sup)?'Food':'Other',amount:parseFloat(document.getElementById('invAmount').value)||0,invoice_no:document.getElementById('invNo').value,notes:document.getElementById('invNotes').value});
     showToast('Invoice saved!');clearScan();loadInvHistory();if(document.getElementById('tab-pl').style.display!=='none')loadPL();
