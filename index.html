@@ -658,6 +658,8 @@ async function loadInvHistory(){
         +'</div>'
       +'</div>';
     }).join('');
+    var total=inv.reduce(function(s,r){return s+(parseFloat(r.amount)||0);},0);
+    el.innerHTML+='<div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding:12px 14px;background:rgba(0,212,255,.06);border:1px solid rgba(0,212,255,.2);border-radius:10px;font-weight:800;font-size:14px"><span style="color:var(--muted)">Total'+(dv?' — '+dv:'')+' ('+inv.length+' invoice'+(inv.length===1?'':'s')+')</span><span style="color:var(--cyan)">$'+total.toFixed(2)+'</span></div>';
   }catch(ex){el.innerHTML='<div class="loading-msg" style="color:var(--red)">Error: '+ex.message+'</div>';}
 }
 async function saveEditSales(id){
@@ -705,16 +707,14 @@ async function loadHistory(){
   document.getElementById('hInv').innerHTML='<div class="loading-msg">Loading...</div>';
   var dv=document.getElementById('histDate').value;
   var df=dv?'&date=eq.'+dv:'';
-  var _now=new Date();
-  var todayStr=_now.getFullYear()+'-'+String(_now.getMonth()+1).padStart(2,'0')+'-'+String(_now.getDate()).padStart(2,'0');
   try{
-    const [sales,inv,todayInv]=await Promise.all([
+    const [sales,inv]=await Promise.all([
       sbSelect('sales','branch=eq.'+branch+df+'&order=date.desc,created_at.desc&limit=30&select=*'),
-      sbSelect('invoices','branch=eq.'+branch+df+'&order=created_at.desc&limit=50'),
-      sbSelect('invoices','branch=eq.'+branch+'&date=eq.'+todayStr+'&select=amount')
+      sbSelect('invoices','branch=eq.'+branch+df+'&order=created_at.desc&limit=50')
     ]);
-    var todayTotal=todayInv.reduce(function(s,r){return s+(parseFloat(r.amount)||0);},0);
-    document.getElementById('invTodayBadge').textContent='Today: $'+todayTotal.toFixed(2);
+    var invTotal=inv.reduce(function(s,r){return s+(parseFloat(r.amount)||0);},0);
+    var invLabel=dv?dv:'All';
+    document.getElementById('invTodayBadge').textContent=invLabel+': $'+invTotal.toFixed(2);
     document.getElementById('hSales').innerHTML=sales.length?sales.map(function(s){
       return '<div class="inv-card" id="scard-'+s.id+'">'+
         '<div class="inv-card-head" onclick="toggleSalesCard('+s.id+')">'+
