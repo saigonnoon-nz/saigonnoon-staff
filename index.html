@@ -226,7 +226,7 @@
       </div>
     </div>
     <div class="card"><h2>💰 Sales</h2><div id="hSales"><div class="loading-msg">Select a date above</div></div></div>
-    <div class="card" style="margin-top:12px"><h2>🧾 Invoices</h2><div id="hInv"><div class="loading-msg">Select a date above</div></div></div>
+    <div class="card" style="margin-top:12px"><h2>🧾 Invoices &nbsp;<span id="invTodayBadge" style="font-size:12px;font-weight:700;color:var(--cyan);background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.25);border-radius:20px;padding:3px 10px;vertical-align:middle"></span></h2><div id="hInv"><div class="loading-msg">Select a date above</div></div></div>
   </div>
 
   <!-- ROSTER TAB -->
@@ -705,11 +705,16 @@ async function loadHistory(){
   document.getElementById('hInv').innerHTML='<div class="loading-msg">Loading...</div>';
   var dv=document.getElementById('histDate').value;
   var df=dv?'&date=eq.'+dv:'';
+  var _now=new Date();
+  var todayStr=_now.getFullYear()+'-'+String(_now.getMonth()+1).padStart(2,'0')+'-'+String(_now.getDate()).padStart(2,'0');
   try{
-    const [sales,inv]=await Promise.all([
+    const [sales,inv,todayInv]=await Promise.all([
       sbSelect('sales','branch=eq.'+branch+df+'&order=date.desc,created_at.desc&limit=30&select=*'),
-      sbSelect('invoices','branch=eq.'+branch+df+'&order=created_at.desc&limit=50')
+      sbSelect('invoices','branch=eq.'+branch+df+'&order=created_at.desc&limit=50'),
+      sbSelect('invoices','branch=eq.'+branch+'&date=eq.'+todayStr+'&select=amount')
     ]);
+    var todayTotal=todayInv.reduce(function(s,r){return s+(parseFloat(r.amount)||0);},0);
+    document.getElementById('invTodayBadge').textContent='Today: $'+todayTotal.toFixed(2);
     document.getElementById('hSales').innerHTML=sales.length?sales.map(function(s){
       return '<div class="inv-card" id="scard-'+s.id+'">'+
         '<div class="inv-card-head" onclick="toggleSalesCard('+s.id+')">'+
