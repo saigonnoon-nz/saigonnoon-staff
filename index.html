@@ -153,7 +153,7 @@
       <label>Supplier</label>
       <select id="invSupplier">
         <option value="">Select supplier...</option>
-        <option>Bid Food</option><option>Bid Fresh</option><option>Food Services</option>
+        <option>Bid Food</option><option>Bid Fresh</option>
         <option>Service Food</option><option>Butchery</option><option>Supermarket</option>
         <option>Drinks Supplier</option><option>Other</option>
       </select>
@@ -617,7 +617,7 @@ async function loadInvHistory(){
   try{
     var inv=await sbSelect('invoices','branch=eq.'+branch+df+'&order=created_at.desc&limit=30');
     if(!inv.length){el.innerHTML='<div class="loading-msg">No invoices found.</div>';return;}
-    var sups=['Bid Food','Bid Fresh','Food Services','Service Food','Butchery','Supermarket','Drinks Supplier','Other'];
+    var sups=['Bid Food','Bid Fresh','Service Food','Butchery','Supermarket','Drinks Supplier','Other'];
     el.innerHTML=inv.map(function(i){
       var optHtml=sups.map(function(s){return '<option'+(s===i.supplier?' selected':'')+'>'+s+'</option>';}).join('');
       var label=(i.supplier||'Unknown')+' '+i.date;
@@ -681,7 +681,7 @@ async function saveEditSales(id){
 async function saveEditInv(id){
   try{
     const sup=document.getElementById('ed-sup-'+id).value;
-    const fs=['Bid Food','Bid Fresh','Food Services','Service Food','Butchery'];
+    const fs=['Bid Food','Bid Fresh','Service Food','Butchery'];
     await sbUpdate('invoices',id,{date:document.getElementById('ed-date-'+id).value,supplier:sup,category:fs.includes(sup)?'Food':'Other',supplier_group:fs.includes(sup)?'Food':'Other',amount:parseFloat(document.getElementById('ed-amt-'+id).value)||0,invoice_no:document.getElementById('ed-no-'+id).value,notes:document.getElementById('ed-notes-'+id).value});
     showToast('Invoice updated');loadInvHistory();if(document.getElementById('tab-pl').style.display!=='none')loadPL();
   }catch(e){showToast('Error: '+e.message,true);}
@@ -847,7 +847,7 @@ async function scanInvoice(){
   document.getElementById('aiFilledBadge').style.display='none';
   try{
     const content=scanCSVText?{type:'text',text:'INVOICE CSV DATA:\n'+scanCSVText}:scanMediaType==='application/pdf'?{type:'document',source:{type:'base64',media_type:'application/pdf',data:scanImageB64}}:{type:'image',source:{type:'base64',media_type:scanMediaType,data:scanImageB64}};
-    const res=await fetch(AI_URL,{method:'POST',headers:{'Authorization':'Bearer '+SB_KEY,'content-type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1024,messages:[{role:'user',content:[content,{type:'text',text:'Supplier invoice for Saigon Noon NZ. Reply ONLY with valid JSON: {"supplier":"","date":"YYYY-MM-DD","invoice_no":"","total_amount":0,"gst_amount":0,"subtotal":null,"items":[{"name":"","qty":null,"unit":null,"price":null}],"items_summary":""}. Known suppliers: Bid Food, Bid Fresh, Food Services, Service Food, Butchery.'}]}]})});
+    const res=await fetch(AI_URL,{method:'POST',headers:{'Authorization':'Bearer '+SB_KEY,'content-type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1024,messages:[{role:'user',content:[content,{type:'text',text:'Supplier invoice for Saigon Noon NZ. Reply ONLY with valid JSON: {"supplier":"","date":"YYYY-MM-DD","invoice_no":"","total_amount":0,"gst_amount":0,"subtotal":null,"items":[{"name":"","qty":null,"unit":null,"price":null}],"items_summary":""}. Known suppliers: Bid Food, Bid Fresh, Service Food, Butchery.'}]}]})});
     if(!res.ok)throw new Error('AI error: '+res.status);
     const data=await res.json();const text=data.content[0].text.trim();
     let parsed;
@@ -879,7 +879,7 @@ async function saveInvoice(){
     const ago=new Date(Date.now()-180000).toISOString();
     const dupes=await sbSelect('invoices','branch=eq.'+branch+'&supplier=eq.'+encodeURIComponent(sup)+'&amount=eq.'+amt+'&created_at=gte.'+ago+'&limit=1');
     if(dupes&&dupes.length>0){showToast('Duplicate — this invoice was just saved',true);btn.disabled=false;btn.textContent='Save Invoice';return;}
-    const fs=['Bid Food','Bid Fresh','Food Services','Service Food','Butchery'];
+    const fs=['Bid Food','Bid Fresh','Service Food','Butchery'];
     await sbInsert('invoices',{branch:branch,date:document.getElementById('invDate').value,supplier:sup,supplier_group:fs.includes(sup)?'Food':'Other',category:fs.includes(sup)?'Food':'Other',amount:parseFloat(document.getElementById('invAmount').value)||0,invoice_no:document.getElementById('invNo').value,notes:document.getElementById('invNotes').value});
     showToast('Invoice saved!');clearScan();loadInvHistory();if(document.getElementById('tab-pl').style.display!=='none')loadPL();
   }catch(e){showToast('Error: '+e.message,true);}
