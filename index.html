@@ -354,7 +354,7 @@ function calcLabourFromRoster(staffList,rosterRows,b,start,end){
 async function loadPL(){
   var start,end;
   if(plMode==='daily'){start=document.getElementById('plDay').value;if(!start)return;end=start;}
-  else if(plMode==='weekly'){start=document.getElementById('plWeek').value;if(!start)return;var ew=new Date(start+'T12:00:00');ew.setDate(ew.getDate()+6);end=localDate(ew);}
+  else if(plMode==='weekly'){start=document.getElementById('plWeek').value;if(!start)return;var ew=new Date(start+'T12:00:00');ew.setDate(ew.getDate()+6);var _t=new Date();var todayW=_t.getFullYear()+'-'+String(_t.getMonth()+1).padStart(2,'0')+'-'+String(_t.getDate()).padStart(2,'0');end=localDate(ew)>todayW?todayW:localDate(ew);}
   else{var m=document.getElementById('plMonth').value;if(!m)return;start=m+'-01';var em=new Date(start+'T12:00:00');em.setMonth(em.getMonth()+1);em.setDate(em.getDate()-1);end=localDate(em);}
   document.getElementById('plOut').innerHTML='<div class="loading-msg">Loading...</div>';
   try{
