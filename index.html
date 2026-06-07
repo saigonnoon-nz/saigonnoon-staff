@@ -363,7 +363,7 @@ async function loadPL(){
       sbSelect('sales','branch=eq.'+branch+'&date=gte.'+start+'&date=lte.'+end),
       sbSelect('invoices','branch=eq.'+branch+'&date=gte.'+start+'&date=lte.'+end),
       fetch(SB_URL+'/rest/v1/staff?active=eq.true&select=id,name,branch,hourly_rate',{headers:hdrs}).then(function(r){return r.json();}),
-      fetch(SB_URL+'/rest/v1/roster?branch=eq.'+branch+'&select=staff_id,branch,mon,tue,wed,thu,fri,sat,sun',{headers:hdrs}).then(function(r){return r.json();})
+      fetch(SB_URL+'/rest/v1/roster?branch=eq.'+branch+'&week_start=eq.'+getMonday(new Date(start+'T12:00:00'))+'&select=staff_id,branch,mon,tue,wed,thu,fri,sat,sun',{headers:hdrs}).then(function(r){return r.json();})
     ]);
     const net=sales.reduce((s,r)=>s+(r.net_total||0),0);
     const food=inv.reduce((s,r)=>s+(r.amount||0),0);
