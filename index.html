@@ -977,7 +977,7 @@ async function scanInvoice(){
   document.getElementById('aiFilledBadge').style.display='none';
   try{
     const content=scanCSVText?{type:'text',text:'INVOICE CSV DATA:\n'+scanCSVText}:scanMediaType==='application/pdf'?{type:'document',source:{type:'base64',media_type:'application/pdf',data:scanImageB64}}:{type:'image',source:{type:'base64',media_type:scanMediaType,data:scanImageB64}};
-    const res=await fetch(AI_URL,{method:'POST',headers:{'Authorization':'Bearer '+SB_KEY,'content-type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:4096,messages:[{role:'user',content:[content,{type:'text',text:'Supplier invoice for Saigon Noon NZ. Reply ONLY with valid JSON: {"supplier":"","date":"YYYY-MM-DD","invoice_no":"","total_amount":0,"gst_amount":0,"subtotal":null,"items":[{"name":"","qty":null,"unit":null,"unit_price":null,"line_total":null}],"items_summary":""}. IMPORTANT: unit_price = price per single unit (e.g. per kg, per each), line_total = qty × unit_price (total cost for that line). Known suppliers: Bid Food, Bid Fresh, Gilmours, PaknSave, Service Food, Butchery, Supermarket, Drinks Supplier, OneStopPak. If there are more than 20 line items, include only the top 20 by line_total and summarise the rest in items_summary. Ensure the JSON is complete and valid.'}]}]})});
+    const res=await fetch(AI_URL,{method:'POST',headers:{'Authorization':'Bearer '+SB_KEY,'content-type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:4096,messages:[{role:'user',content:[content,{type:'text',text:'Supplier invoice for Saigon Noon NZ. Reply ONLY with valid JSON: {"supplier":"","date":"YYYY-MM-DD","invoice_no":"","total_amount":0,"gst_amount":0,"subtotal":null,"items":[{"name":"","qty":null,"unit":null,"unit_price":null,"line_total":null}],"items_summary":""}. IMPORTANT: unit_price = GST-inclusive price per single unit, line_total = GST-inclusive total for that line (qty × unit_price including GST). total_amount must also be GST-inclusive. Known suppliers: Bid Food, Bid Fresh, Gilmours, PaknSave, Service Food, Butchery, Supermarket, Drinks Supplier, OneStopPak. If there are more than 20 line items, include only the top 20 by line_total and summarise the rest in items_summary. Ensure the JSON is complete and valid.'}]}]})});
     if(!res.ok)throw new Error('AI error: '+res.status);
     const data=await res.json();const text=data.content[0].text.trim();
     let parsed;
@@ -1062,13 +1062,11 @@ async function saveInvoice(){
       if(split.rot.nextWeek>0.001) saves.push(sbInsert('invoices',{branch:'Rototuna',date:split.nextMonday,supplier:sup,category:cat,supplier_group:cat,amount:parseFloat(split.rot.nextWeek.toFixed(2)),invoice_no:invNo,notes:baseNote+' (carried fwd)'}));
       await Promise.all(saves);
       // Save items once (physical goods — branch is wherever invoice was scanned)
-      showToast('Items in scan: '+lastScannedItems.length);
       try{await saveInvoiceItems(null,branch,dt,sup,lastScannedItems);}catch(e){showToast('Invoice saved but items failed: '+e.message,true);}
       showToast('Shared invoice saved — split across both branches!');
     } else {
       var fs=FOOD_SUPPLIERS;
       var saved=await sbInsertReturn('invoices',{branch:branch,date:dt,supplier:sup,supplier_group:fs.includes(sup)?'Food':'Other',category:fs.includes(sup)?'Food':'Other',amount:amt,invoice_no:invNo,notes:notes});
-      showToast('Items in scan: '+lastScannedItems.length);
       try{await saveInvoiceItems(saved&&saved.id,branch,dt,sup,lastScannedItems);}catch(e){showToast('Invoice saved but items failed: '+e.message,true);}
       showToast('Invoice saved!');
     }
