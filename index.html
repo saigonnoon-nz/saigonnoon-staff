@@ -1062,12 +1062,12 @@ async function saveInvoice(){
       if(split.rot.nextWeek>0.001) saves.push(sbInsert('invoices',{branch:'Rototuna',date:split.nextMonday,supplier:sup,category:cat,supplier_group:cat,amount:parseFloat(split.rot.nextWeek.toFixed(2)),invoice_no:invNo,notes:baseNote+' (carried fwd)'}));
       await Promise.all(saves);
       // Save items once (physical goods — branch is wherever invoice was scanned)
-      try{await saveInvoiceItems(null,branch,dt,sup,lastScannedItems);}catch(e){console.warn('Items save failed:',e);}
+      try{await saveInvoiceItems(null,branch,dt,sup,lastScannedItems);}catch(e){showToast('Invoice saved but items failed: '+e.message,true);}
       showToast('Shared invoice saved — split across both branches!');
     } else {
       var fs=FOOD_SUPPLIERS;
       var saved=await sbInsertReturn('invoices',{branch:branch,date:dt,supplier:sup,supplier_group:fs.includes(sup)?'Food':'Other',category:fs.includes(sup)?'Food':'Other',amount:amt,invoice_no:invNo,notes:notes});
-      try{await saveInvoiceItems(saved&&saved.id,branch,dt,sup,lastScannedItems);}catch(e){console.warn('Items save failed:',e);}
+      try{await saveInvoiceItems(saved&&saved.id,branch,dt,sup,lastScannedItems);}catch(e){showToast('Invoice saved but items failed: '+e.message,true);}
       showToast('Invoice saved!');
     }
     clearScan();loadInvHistory();if(document.getElementById('tab-pl').style.display!=='none')loadPL();
@@ -1084,19 +1084,20 @@ async function saveInvoiceItems(invoiceId, itemBranch, itemDate, itemSupplier, i
       branch: itemBranch,
       date: itemDate,
       supplier: itemSupplier,
-      item_name: (it.name||'').trim(),
+      item_name: (it.name||it.item_name||'').trim(),
       qty: it.qty!=null?parseFloat(it.qty):null,
       unit: it.unit||null,
       unit_price: it.unit_price!=null?parseFloat(it.unit_price):(it.price!=null&&it.qty?parseFloat((it.price/it.qty).toFixed(4)):it.price!=null?parseFloat(it.price):null),
       total_price: it.line_total!=null?parseFloat(it.line_total):(it.price!=null?parseFloat(it.price):null)
     };
   }).filter(function(r){return r.item_name;});
-  if(!rows.length) return;
-  await fetchWithTimeout(SB_URL+'/rest/v1/invoice_items',{
+  if(!rows.length){console.warn('saveInvoiceItems: no rows after filter, raw items:',items);return;}
+  var r=await fetchWithTimeout(SB_URL+'/rest/v1/invoice_items',{
     method:'POST',
     headers:{...SB_HDR,'Prefer':'return=minimal'},
     body:JSON.stringify(rows)
   });
+  if(!r.ok){var msg=await r.text();throw new Error('Items DB error: '+msg);}
 }
 
 // SALES
