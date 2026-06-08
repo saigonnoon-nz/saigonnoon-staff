@@ -352,10 +352,22 @@ function calcLabourFromRoster(staffList,rosterRows,b,start,end){
 }
 
 async function loadPL(){
+  var _now=new Date();
+  var _today=_now.getFullYear()+'-'+String(_now.getMonth()+1).padStart(2,'0')+'-'+String(_now.getDate()).padStart(2,'0');
   var start,end;
-  if(plMode==='daily'){start=document.getElementById('plDay').value;if(!start)return;end=start;}
-  else if(plMode==='weekly'){start=document.getElementById('plWeek').value;if(!start)return;var ew=new Date(start+'T12:00:00');ew.setDate(ew.getDate()+6);var _t=new Date();var todayW=_t.getFullYear()+'-'+String(_t.getMonth()+1).padStart(2,'0')+'-'+String(_t.getDate()).padStart(2,'0');end=localDate(ew)>todayW?todayW:localDate(ew);}
-  else{var m=document.getElementById('plMonth').value;if(!m)return;start=m+'-01';var em=new Date(start+'T12:00:00');em.setMonth(em.getMonth()+1);em.setDate(em.getDate()-1);end=localDate(em);}
+  if(plMode==='daily'){
+    if(!document.getElementById('plDay').value)document.getElementById('plDay').value=_today;
+    start=document.getElementById('plDay').value;end=start;
+  }else if(plMode==='weekly'){
+    if(!document.getElementById('plWeek').value)document.getElementById('plWeek').value=getCurrentMonday();
+    start=document.getElementById('plWeek').value;
+    var ew=new Date(start+'T12:00:00');ew.setDate(ew.getDate()+6);
+    end=localDate(ew)>_today?_today:localDate(ew);
+  }else{
+    if(!document.getElementById('plMonth').value)document.getElementById('plMonth').value=_today.slice(0,7);
+    var m=document.getElementById('plMonth').value;
+    start=m+'-01';var em=new Date(start+'T12:00:00');em.setMonth(em.getMonth()+1);em.setDate(em.getDate()-1);end=localDate(em)>_today?_today:localDate(em);
+  }
   document.getElementById('plOut').innerHTML='<div class="loading-msg">Loading...</div>';
   try{
     var hdrs={'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY};
@@ -727,7 +739,7 @@ async function loadHistory(){
             '<div style="font-size:11px;color:var(--muted);margin-top:2px">🕐 '+fmtTS(s.created_at)+'</div>'+
           '</div>'+
           '<div style="display:flex;align-items:center;gap:10px">'+
-            '<span style="font-weight:800;color:var(--green)">Net '+fmt(s.net_total)+'</span>'+
+            '<span style="font-weight:800;color:var(--green)">Gross '+fmt(s.gross_total||0)+'</span>'+
             '<span style="color:var(--cyan);font-size:18px">&#9660;</span>'+
           '</div>'+
         '</div>'+
@@ -795,6 +807,7 @@ window.addEventListener('DOMContentLoaded',function(){
   document.getElementById('plDay').value=today;
   document.getElementById('plWeek').value=getCurrentMonday();
   document.getElementById('plMonth').value=today.slice(0,7);
+  loadPL();
   // Check connection with a 5s timeout, non-blocking
   var ctrl=new AbortController();
   var tid=setTimeout(function(){ctrl.abort();},5000);
