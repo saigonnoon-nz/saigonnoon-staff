@@ -365,6 +365,8 @@ async function loadPL(){
       fetch(SB_URL+'/rest/v1/staff?active=eq.true&select=id,name,branch,hourly_rate',{headers:hdrs}).then(function(r){return r.json();}),
       fetch(SB_URL+'/rest/v1/roster?branch=eq.'+branch+'&week_start=eq.'+getMonday(new Date(start+'T12:00:00'))+'&select=staff_id,branch,mon,tue,wed,thu,fri,sat,sun',{headers:hdrs}).then(function(r){return r.json();})
     ]);
+    const gross=sales.reduce((s,r)=>s+(r.gross_total||0),0);
+    const comm=sales.reduce((s,r)=>s+(r.total_comm||0),0);
     const net=sales.reduce((s,r)=>s+(r.net_total||0),0);
     const food=inv.reduce((s,r)=>s+(r.amount||0),0);
     const labour=calcLabourFromRoster(staffRes,rosterRes,branch,start,end);
@@ -376,6 +378,8 @@ async function loadPL(){
     const lbl=plMode==='daily'?start:plMode==='weekly'?start+' to '+end:document.getElementById('plMonth').value;
     document.getElementById('plOut').innerHTML='<div class="card"><div style="font-size:11px;color:var(--muted);margin-bottom:12px">'+branch+' - '+lbl+'</div>'+
       '<div class="pl-row hd"><span>REVENUE</span></div>'+
+      '<div class="pl-row"><span class="lbl">Gross Sales</span><span><strong>'+fmt(gross)+'</strong></span></div>'+
+      '<div class="pl-row"><span class="lbl" style="color:var(--red)">Commission (Uber 30% / DD 27%)</span><span style="color:var(--red)">-'+fmt(comm)+'</span></div>'+
       '<div class="pl-row"><span class="lbl">Net Sales</span><span><strong>'+fmt(net)+'</strong></span></div>'+
       '<div class="pl-row hd"><span>COSTS</span></div>'+
       '<div class="pl-row"><span class="lbl">Food Cost '+p(food)+'</span><span>'+fmt(food)+'</span></div>'+
