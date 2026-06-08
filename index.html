@@ -706,9 +706,29 @@ async function saveEditSales(id){
 async function saveEditInv(id){
   try{
     const sup=document.getElementById('ed-sup-'+id).value;
-    const fs=FOOD_SUPPLIERS;
-    await sbUpdate('invoices',id,{date:document.getElementById('ed-date-'+id).value,supplier:sup,category:fs.includes(sup)?'Food':'Other',supplier_group:fs.includes(sup)?'Food':'Other',amount:parseFloat(document.getElementById('ed-amt-'+id).value)||0,invoice_no:document.getElementById('ed-no-'+id).value,notes:document.getElementById('ed-notes-'+id).value});
-    showToast('Invoice updated');loadInvHistory();if(document.getElementById('tab-pl').style.display!=='none')loadPL();
+    const dt=document.getElementById('ed-date-'+id).value;
+    const amt=parseFloat(document.getElementById('ed-amt-'+id).value)||0;
+    const invNo=document.getElementById('ed-no-'+id).value;
+    const notes=document.getElementById('ed-notes-'+id).value;
+    if(SPLIT_SUPPLIERS.includes(sup)){
+      // Delete original record, create split records
+      await sbDelete('invoices',id);
+      var split=calcSplit(amt,dt);
+      var cat=FOOD_SUPPLIERS.includes(sup)?'Food':'Other';
+      var baseNote=(notes?notes+' — ':'')+'Shared cost (÷2 stores, daily dist.)';
+      var saves=[];
+      if(split.cbd.thisWeek>0.001) saves.push(sbInsert('invoices',{branch:'CBD',date:dt,supplier:sup,category:cat,supplier_group:cat,amount:parseFloat(split.cbd.thisWeek.toFixed(2)),invoice_no:invNo,notes:baseNote}));
+      if(split.cbd.nextWeek>0.001) saves.push(sbInsert('invoices',{branch:'CBD',date:split.nextMonday,supplier:sup,category:cat,supplier_group:cat,amount:parseFloat(split.cbd.nextWeek.toFixed(2)),invoice_no:invNo,notes:baseNote+' (carried fwd)'}));
+      if(split.rot.thisWeek>0.001) saves.push(sbInsert('invoices',{branch:'Rototuna',date:dt,supplier:sup,category:cat,supplier_group:cat,amount:parseFloat(split.rot.thisWeek.toFixed(2)),invoice_no:invNo,notes:baseNote}));
+      if(split.rot.nextWeek>0.001) saves.push(sbInsert('invoices',{branch:'Rototuna',date:split.nextMonday,supplier:sup,category:cat,supplier_group:cat,amount:parseFloat(split.rot.nextWeek.toFixed(2)),invoice_no:invNo,notes:baseNote+' (carried fwd)'}));
+      await Promise.all(saves);
+      showToast('Shared invoice saved — split across both branches!');
+    } else {
+      const fs=FOOD_SUPPLIERS;
+      await sbUpdate('invoices',id,{date:dt,supplier:sup,category:fs.includes(sup)?'Food':'Other',supplier_group:fs.includes(sup)?'Food':'Other',amount:amt,invoice_no:invNo,notes:notes});
+      showToast('Invoice updated');
+    }
+    loadInvHistory();if(document.getElementById('tab-pl').style.display!=='none')loadPL();
   }catch(e){showToast('Error: '+e.message,true);}
 }
 
