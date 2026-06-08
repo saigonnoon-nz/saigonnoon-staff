@@ -977,7 +977,7 @@ async function scanInvoice(){
   document.getElementById('aiFilledBadge').style.display='none';
   try{
     const content=scanCSVText?{type:'text',text:'INVOICE CSV DATA:\n'+scanCSVText}:scanMediaType==='application/pdf'?{type:'document',source:{type:'base64',media_type:'application/pdf',data:scanImageB64}}:{type:'image',source:{type:'base64',media_type:scanMediaType,data:scanImageB64}};
-    const res=await fetch(AI_URL,{method:'POST',headers:{'Authorization':'Bearer '+SB_KEY,'content-type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:4096,messages:[{role:'user',content:[content,{type:'text',text:'Supplier invoice for Saigon Noon NZ. Reply ONLY with valid JSON: {"supplier":"","date":"YYYY-MM-DD","invoice_no":"","total_amount":0,"gst_amount":0,"subtotal":null,"items":[{"name":"","qty":null,"unit":null,"price":null}],"items_summary":""}. Known suppliers: Bid Food, Bid Fresh, Gilmours, PaknSave, Service Food, Butchery, Supermarket, Drinks Supplier, OneStopPak. If there are more than 20 line items, include only the top 20 by price and summarise the rest in items_summary. Ensure the JSON is complete and valid.'}]}]})});
+    const res=await fetch(AI_URL,{method:'POST',headers:{'Authorization':'Bearer '+SB_KEY,'content-type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:4096,messages:[{role:'user',content:[content,{type:'text',text:'Supplier invoice for Saigon Noon NZ. Reply ONLY with valid JSON: {"supplier":"","date":"YYYY-MM-DD","invoice_no":"","total_amount":0,"gst_amount":0,"subtotal":null,"items":[{"name":"","qty":null,"unit":null,"unit_price":null,"line_total":null}],"items_summary":""}. IMPORTANT: unit_price = price per single unit (e.g. per kg, per each), line_total = qty × unit_price (total cost for that line). Known suppliers: Bid Food, Bid Fresh, Gilmours, PaknSave, Service Food, Butchery, Supermarket, Drinks Supplier, OneStopPak. If there are more than 20 line items, include only the top 20 by line_total and summarise the rest in items_summary. Ensure the JSON is complete and valid.'}]}]})});
     if(!res.ok)throw new Error('AI error: '+res.status);
     const data=await res.json();const text=data.content[0].text.trim();
     let parsed;
@@ -991,7 +991,14 @@ async function scanInvoice(){
     lastScannedItems=parsed.items||[];
     const iw=document.getElementById('itemsBreakdown');
     if(parsed.items&&parsed.items.length>0){
-      const rows=parsed.items.map(function(it){return '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(30,45,64,.5);font-size:12px"><span style="color:var(--text);flex:1">'+(it.name||'-')+(it.qty!=null?' ('+it.qty+(it.unit?' '+it.unit:'')+')'  :'')+'</span><span style="font-weight:700;color:var(--cyan);margin-left:8px">'+(it.price!=null?'$'+Number(it.price).toFixed(2):'')+'</span></div>';}).join('');
+      const rows=parsed.items.map(function(it){
+        var lineTotal=it.line_total!=null?it.line_total:(it.price!=null?it.price:null);
+        var uprice=it.unit_price!=null?it.unit_price:(it.price!=null&&it.qty?null:it.price);
+        return '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(30,45,64,.5);font-size:12px">'+
+          '<span style="color:var(--text);flex:1">'+(it.name||'-')+(it.qty!=null?' × '+it.qty+(it.unit?' '+it.unit:''):'')+(uprice!=null?' @ $'+Number(uprice).toFixed(2):'')+'</span>'+
+          '<span style="font-weight:700;color:var(--cyan);margin-left:8px">'+(lineTotal!=null?'$'+Number(lineTotal).toFixed(2):'')+'</span>'+
+        '</div>';
+      }).join('');
       iw.innerHTML='<div style="margin-top:14px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px"><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">Items ('+parsed.items.length+') - '+(parsed.supplier||'?')+'</div>'+rows+'<div style="display:flex;justify-content:space-between;padding:8px 0 0;font-size:14px;font-weight:800;border-top:1px solid rgba(0,212,255,.2);margin-top:6px;color:var(--cyan)"><span>Total</span><span>$'+Number(parsed.total_amount||0).toFixed(2)+'</span></div></div>';
       iw.style.display='block';
     }
@@ -1080,8 +1087,8 @@ async function saveInvoiceItems(invoiceId, itemBranch, itemDate, itemSupplier, i
       item_name: (it.name||'').trim(),
       qty: it.qty!=null?parseFloat(it.qty):null,
       unit: it.unit||null,
-      unit_price: it.price!=null&&it.qty?parseFloat((it.price/it.qty).toFixed(4)):null,
-      total_price: it.price!=null?parseFloat(it.price):null
+      unit_price: it.unit_price!=null?parseFloat(it.unit_price):(it.price!=null&&it.qty?parseFloat((it.price/it.qty).toFixed(4)):it.price!=null?parseFloat(it.price):null),
+      total_price: it.line_total!=null?parseFloat(it.line_total):(it.price!=null?parseFloat(it.price):null)
     };
   }).filter(function(r){return r.item_name;});
   if(!rows.length) return;
