@@ -201,6 +201,14 @@
       <div class="calc-row net"><span>NET SALES</span><span id="rNT">$0.00</span></div>
     </div>
     <button class="btn" id="saveSalesBtn" onclick="saveSales()">Save Sales</button>
+    <div class="card" style="margin-top:12px">
+      <h2>📊 View Sales</h2>
+      <div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:12px">
+        <div style="flex:1"><label style="margin-top:0">Date</label><input type="date" id="viewSalesDate" onchange="loadViewSales()"></div>
+        <button class="btn-sm btn-blue" onclick="loadViewSales()" style="margin-bottom:1px;padding:10px 14px">Load</button>
+      </div>
+      <div id="viewSalesResult"><div class="loading-msg">Loading...</div></div>
+    </div>
   </div>
 
   <!-- P&L TAB -->
@@ -323,6 +331,12 @@ function showTab(name){
   }
   if(name==='pl')loadPL();
   if(name==='roster')loadRoster();
+  if(name==='sales'){
+    if(!document.getElementById('viewSalesDate').value){
+      document.getElementById('viewSalesDate').value=new Date().toLocaleDateString('en-CA');
+    }
+    loadViewSales();
+  }
 }
 
 // P&L
@@ -1088,6 +1102,33 @@ function calcSales(){
   document.getElementById('rDD').textContent=fmt(dd-dc);document.getElementById('rBO').textContent=fmt(bo);
   document.getElementById('rCM').textContent='-'+fmt(tc);document.getElementById('rNT').textContent=fmt(ih+(ub-uc)+(dd-dc)+bo);
 }
+async function loadViewSales(){
+  var el=document.getElementById('viewSalesResult');
+  var dt=document.getElementById('viewSalesDate').value;
+  if(!dt){el.innerHTML='<div class="loading-msg">Pick a date</div>';return;}
+  el.innerHTML='<div class="loading-msg">Loading...</div>';
+  try{
+    var rows=await sbSelect('sales','branch=eq.'+branch+'&date=eq.'+dt+'&limit=5');
+    if(!rows||!rows.length){el.innerHTML='<div class="loading-msg">No sales entry for this date</div>';return;}
+    var r=rows[0];
+    var ub=Number(r.uber_total||0),uc=Number(r.uber_comm||0);
+    var dd=Number(r.doordash_total||0),dc=Number(r.doordash_comm||0);
+    var bo=Number(r.booknorders_total||0),ih=Number(r.inhouse_total||0);
+    var gross=Number(r.gross_total||0),comm=Number(r.total_comm||0),net=Number(r.net_total||0);
+    el.innerHTML=
+      '<div class="calc-row"><span class="lbl">In-House</span><span>$'+ih.toFixed(2)+'</span></div>'+
+      (ub?'<div class="calc-row"><span class="lbl">Uber Eats (gross)</span><span>$'+ub.toFixed(2)+'</span></div>'+
+          '<div class="calc-row"><span class="lbl" style="color:var(--red)">Uber commission (30%)</span><span style="color:var(--red)">-$'+uc.toFixed(2)+'</span></div>':'')+
+      (dd?'<div class="calc-row"><span class="lbl">DoorDash (gross)</span><span>$'+dd.toFixed(2)+'</span></div>'+
+          '<div class="calc-row"><span class="lbl" style="color:var(--red)">DoorDash commission (27%)</span><span style="color:var(--red)">-$'+dc.toFixed(2)+'</span></div>':'')+
+      (bo?'<div class="calc-row"><span class="lbl">BooknOrders</span><span>$'+bo.toFixed(2)+'</span></div>':'')+
+      '<div class="calc-row" style="border-top:1px solid rgba(0,212,255,.2);margin-top:6px"><span class="lbl">Gross Sales</span><span style="color:var(--cyan);font-weight:700">$'+gross.toFixed(2)+'</span></div>'+
+      '<div class="calc-row"><span class="lbl" style="color:var(--red)">Total Commission</span><span style="color:var(--red)">-$'+comm.toFixed(2)+'</span></div>'+
+      '<div class="calc-row net"><span>NET SALES</span><span>$'+net.toFixed(2)+'</span></div>'+
+      (r.notes?'<div style="margin-top:8px;font-size:12px;color:var(--muted)">Notes: '+r.notes+'</div>':'');
+  }catch(e){el.innerHTML='<div class="loading-msg" style="color:#ef4444">Error: '+e.message+'</div>';}
+}
+
 async function saveSales(){
   const btn=document.getElementById('saveSalesBtn');btn.disabled=true;btn.textContent='Saving...';
   try{
