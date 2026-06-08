@@ -786,7 +786,7 @@ async function loadItemUsage(){
   var to=document.getElementById('itemTo').value;
   if(!q){el.innerHTML='<div class="loading-msg">Enter an item name to search</div>';return;}
   try{
-    var qs='branch=eq.'+branch+'&item_name=ilike.%25'+encodeURIComponent(q)+'%25&order=date.desc&limit=100';
+    var qs='item_name=ilike.%25'+encodeURIComponent(q)+'%25&order=date.desc&limit=100';
     if(from) qs+='&date=gte.'+from;
     if(to)   qs+='&date=lte.'+to;
     var items=await sbSelect('invoice_items',qs);
@@ -1062,11 +1062,13 @@ async function saveInvoice(){
       if(split.rot.nextWeek>0.001) saves.push(sbInsert('invoices',{branch:'Rototuna',date:split.nextMonday,supplier:sup,category:cat,supplier_group:cat,amount:parseFloat(split.rot.nextWeek.toFixed(2)),invoice_no:invNo,notes:baseNote+' (carried fwd)'}));
       await Promise.all(saves);
       // Save items once (physical goods — branch is wherever invoice was scanned)
+      showToast('Items in scan: '+lastScannedItems.length);
       try{await saveInvoiceItems(null,branch,dt,sup,lastScannedItems);}catch(e){showToast('Invoice saved but items failed: '+e.message,true);}
       showToast('Shared invoice saved — split across both branches!');
     } else {
       var fs=FOOD_SUPPLIERS;
       var saved=await sbInsertReturn('invoices',{branch:branch,date:dt,supplier:sup,supplier_group:fs.includes(sup)?'Food':'Other',category:fs.includes(sup)?'Food':'Other',amount:amt,invoice_no:invNo,notes:notes});
+      showToast('Items in scan: '+lastScannedItems.length);
       try{await saveInvoiceItems(saved&&saved.id,branch,dt,sup,lastScannedItems);}catch(e){showToast('Invoice saved but items failed: '+e.message,true);}
       showToast('Invoice saved!');
     }
