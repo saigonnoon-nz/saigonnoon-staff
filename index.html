@@ -151,12 +151,16 @@
       <div id="aiFilledBadge" class="ai-badge" style="display:none">AI auto-filled - please check and correct</div>
       <label>Date</label><input type="date" id="invDate">
       <label>Supplier</label>
-      <select id="invSupplier">
+      <select id="invSupplier" onchange="onSupplierChange()">
         <option value="">Select supplier...</option>
         <option>Bid Food</option><option>Bid Fresh</option>
+        <option>Gilmours</option><option>PaknSave</option>
         <option>Service Food</option><option>Butchery</option><option>Supermarket</option>
-        <option>Drinks Supplier</option><option>Other</option>
+        <option>Drinks Supplier</option><option>OneStopPak</option><option>Other</option>
       </select>
+      <div id="splitBanner" style="display:none;background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.25);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--cyan);margin-top:4px">
+        ⚡ This invoice will be split 50/50 between CBD & Rototuna and distributed across the week automatically.
+      </div>
       <label>Total Amount ($)</label><input type="number" id="invAmount" placeholder="0.00">
       <label>GST Amount ($)</label><input type="number" id="invGST" placeholder="0.00">
       <label>Invoice No.</label><input type="text" id="invNo" placeholder="e.g. INV-12345">
@@ -208,11 +212,14 @@
         <div class="stab"        id="stWeekly"  onclick="setPLMode('weekly')">Weekly</div>
         <div class="stab"        id="stMonthly" onclick="setPLMode('monthly')">Monthly</div>
       </div>
-      <div id="plDateDaily"><label>Date</label><input type="date" id="plDay" onchange="loadPL()"></div>
-      <div id="plDateWeekly" style="display:none"><label>Week starting (Monday)</label><input type="date" id="plWeek" onchange="loadPL()"></div>
-      <div id="plDateMonthly" style="display:none"><label>Month</label><input type="month" id="plMonth" onchange="loadPL()"></div>
+      <div style="display:flex;gap:8px;align-items:flex-end;margin-top:10px">
+        <div style="flex:1" id="plDateDaily"><label style="margin-top:0">Date</label><input type="date" id="plDay" onchange="loadPL()" oninput="loadPL()"></div>
+        <div style="flex:1;display:none" id="plDateWeekly"><label style="margin-top:0">Week (Monday)</label><input type="date" id="plWeek" onchange="loadPL()" oninput="loadPL()"></div>
+        <div style="flex:1;display:none" id="plDateMonthly"><label style="margin-top:0">Month</label><input type="month" id="plMonth" onchange="loadPL()" oninput="loadPL()"></div>
+        <button class="btn-sm btn-blue" onclick="loadPL()" style="margin-bottom:1px;padding:10px 16px;white-space:nowrap">Load</button>
+      </div>
     </div>
-    <div id="plOut"><div class="loading-msg">Select a date above</div></div>
+    <div id="plOut"><div class="loading-msg">Loading...</div></div>
   </div>
 
   <!-- HISTORY TAB -->
@@ -633,7 +640,7 @@ async function loadInvHistory(){
   try{
     var inv=await sbSelect('invoices','branch=eq.'+branch+df+'&order=created_at.desc&limit=30');
     if(!inv.length){el.innerHTML='<div class="loading-msg">No invoices found.</div>';return;}
-    var sups=['Bid Food','Bid Fresh','Service Food','Butchery','Supermarket','Drinks Supplier','Other'];
+    var sups=['Bid Food','Bid Fresh','Gilmours','PaknSave','Service Food','Butchery','Supermarket','Drinks Supplier','OneStopPak','Other'];
     el.innerHTML=inv.map(function(i){
       var optHtml=sups.map(function(s){return '<option'+(s===i.supplier?' selected':'')+'>'+s+'</option>';}).join('');
       var label=(i.supplier||'Unknown')+' '+i.date;
@@ -699,7 +706,7 @@ async function saveEditSales(id){
 async function saveEditInv(id){
   try{
     const sup=document.getElementById('ed-sup-'+id).value;
-    const fs=['Bid Food','Bid Fresh','Service Food','Butchery'];
+    const fs=FOOD_SUPPLIERS;
     await sbUpdate('invoices',id,{date:document.getElementById('ed-date-'+id).value,supplier:sup,category:fs.includes(sup)?'Food':'Other',supplier_group:fs.includes(sup)?'Food':'Other',amount:parseFloat(document.getElementById('ed-amt-'+id).value)||0,invoice_no:document.getElementById('ed-no-'+id).value,notes:document.getElementById('ed-notes-'+id).value});
     showToast('Invoice updated');loadInvHistory();if(document.getElementById('tab-pl').style.display!=='none')loadPL();
   }catch(e){showToast('Error: '+e.message,true);}
@@ -869,7 +876,7 @@ async function scanInvoice(){
   document.getElementById('aiFilledBadge').style.display='none';
   try{
     const content=scanCSVText?{type:'text',text:'INVOICE CSV DATA:\n'+scanCSVText}:scanMediaType==='application/pdf'?{type:'document',source:{type:'base64',media_type:'application/pdf',data:scanImageB64}}:{type:'image',source:{type:'base64',media_type:scanMediaType,data:scanImageB64}};
-    const res=await fetch(AI_URL,{method:'POST',headers:{'Authorization':'Bearer '+SB_KEY,'content-type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:4096,messages:[{role:'user',content:[content,{type:'text',text:'Supplier invoice for Saigon Noon NZ. Reply ONLY with valid JSON: {"supplier":"","date":"YYYY-MM-DD","invoice_no":"","total_amount":0,"gst_amount":0,"subtotal":null,"items":[{"name":"","qty":null,"unit":null,"price":null}],"items_summary":""}. Known suppliers: Bid Food, Bid Fresh, Service Food, Butchery. If there are more than 20 line items, include only the top 20 by price and summarise the rest in items_summary. Ensure the JSON is complete and valid.'}]}]})});
+    const res=await fetch(AI_URL,{method:'POST',headers:{'Authorization':'Bearer '+SB_KEY,'content-type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:4096,messages:[{role:'user',content:[content,{type:'text',text:'Supplier invoice for Saigon Noon NZ. Reply ONLY with valid JSON: {"supplier":"","date":"YYYY-MM-DD","invoice_no":"","total_amount":0,"gst_amount":0,"subtotal":null,"items":[{"name":"","qty":null,"unit":null,"price":null}],"items_summary":""}. Known suppliers: Bid Food, Bid Fresh, Gilmours, PaknSave, Service Food, Butchery, Supermarket, Drinks Supplier, OneStopPak. If there are more than 20 line items, include only the top 20 by price and summarise the rest in items_summary. Ensure the JSON is complete and valid.'}]}]})});
     if(!res.ok)throw new Error('AI error: '+res.status);
     const data=await res.json();const text=data.content[0].text.trim();
     let parsed;
@@ -890,20 +897,68 @@ async function scanInvoice(){
   }catch(e){showScanError('Scan failed: '+e.message);}
 }
 
+// Split-cost supplier logic
+const SPLIT_SUPPLIERS = ['Gilmours','Drinks Supplier','OneStopPak'];
+const FOOD_SUPPLIERS  = ['Bid Food','Bid Fresh','Gilmours','PaknSave','Service Food','Butchery'];
+
+function onSupplierChange(){
+  var sup=document.getElementById('invSupplier').value;
+  document.getElementById('splitBanner').style.display=SPLIT_SUPPLIERS.includes(sup)?'block':'none';
+}
+
+function calcSplit(totalAmt, invDateStr){
+  var d=new Date(invDateStr+'T12:00:00');
+  var dow=d.getDay(); // 0=Sun,1=Mon,...,6=Sat
+  var storeShare=totalAmt/2;
+  // CBD: Mon-Sat (6 days). remaining = days from invoice day to Sat inclusive
+  var cbdRem = dow===0 ? 0 : (7-dow); // Mon=6,Tue=5,Wed=4,Thu=3,Fri=2,Sat=1,Sun=0
+  var cbdOver= 6-cbdRem;
+  // Rototuna: Mon-Sun (7 days). remaining = days from invoice day to Sun inclusive
+  var rotRem = dow===0 ? 1 : (8-dow); // Mon=7,Tue=6,Wed=5,Thu=4,Fri=3,Sat=2,Sun=1
+  var rotOver= 7-rotRem;
+  // Next Monday date
+  var daysToMon = dow===0 ? 1 : 8-dow;
+  var nextMon=new Date(d); nextMon.setDate(nextMon.getDate()+daysToMon);
+  var nm=nextMon.getFullYear()+'-'+String(nextMon.getMonth()+1).padStart(2,'0')+'-'+String(nextMon.getDate()).padStart(2,'0');
+  return {
+    cbd:{ thisWeek: storeShare*cbdRem/6, nextWeek: storeShare*cbdOver/6 },
+    rot:{ thisWeek: storeShare*rotRem/7, nextWeek: storeShare*rotOver/7 },
+    nextMonday: nm
+  };
+}
+
 async function saveInvoice(){
   const btn=document.getElementById('saveInvBtn');btn.disabled=true;btn.textContent='Saving...';
   try{
     const sup=document.getElementById('invSupplier').value;
     if(!sup){showToast('Select a supplier',true);btn.disabled=false;btn.textContent='Save Invoice';return;}
-    // Duplicate guard: same branch+supplier+amount saved within last 3 minutes
     const amt=parseFloat(document.getElementById('invAmount').value)||0;
     const dt=document.getElementById('invDate').value;
+    const invNo=document.getElementById('invNo').value;
+    const notes=document.getElementById('invNotes').value;
     const ago=new Date(Date.now()-180000).toISOString();
+    // Duplicate guard
     const dupes=await sbSelect('invoices','branch=eq.'+branch+'&supplier=eq.'+encodeURIComponent(sup)+'&amount=eq.'+amt+'&created_at=gte.'+ago+'&limit=1');
     if(dupes&&dupes.length>0){showToast('Duplicate — this invoice was just saved',true);btn.disabled=false;btn.textContent='Save Invoice';return;}
-    const fs=['Bid Food','Bid Fresh','Service Food','Butchery'];
-    await sbInsert('invoices',{branch:branch,date:document.getElementById('invDate').value,supplier:sup,supplier_group:fs.includes(sup)?'Food':'Other',category:fs.includes(sup)?'Food':'Other',amount:parseFloat(document.getElementById('invAmount').value)||0,invoice_no:document.getElementById('invNo').value,notes:document.getElementById('invNotes').value});
-    showToast('Invoice saved!');clearScan();loadInvHistory();if(document.getElementById('tab-pl').style.display!=='none')loadPL();
+
+    if(SPLIT_SUPPLIERS.includes(sup)){
+      // Split 50/50 across both branches, distributed across the week
+      var split=calcSplit(amt,dt);
+      var cat=FOOD_SUPPLIERS.includes(sup)?'Food':'Other';
+      var baseNote=(notes?notes+' — ':'')+'Shared cost (÷2 stores, daily dist.)';
+      var saves=[];
+      if(split.cbd.thisWeek>0.001) saves.push(sbInsert('invoices',{branch:'CBD',date:dt,supplier:sup,category:cat,supplier_group:cat,amount:parseFloat(split.cbd.thisWeek.toFixed(2)),invoice_no:invNo,notes:baseNote}));
+      if(split.cbd.nextWeek>0.001) saves.push(sbInsert('invoices',{branch:'CBD',date:split.nextMonday,supplier:sup,category:cat,supplier_group:cat,amount:parseFloat(split.cbd.nextWeek.toFixed(2)),invoice_no:invNo,notes:baseNote+' (carried fwd)'}));
+      if(split.rot.thisWeek>0.001) saves.push(sbInsert('invoices',{branch:'Rototuna',date:dt,supplier:sup,category:cat,supplier_group:cat,amount:parseFloat(split.rot.thisWeek.toFixed(2)),invoice_no:invNo,notes:baseNote}));
+      if(split.rot.nextWeek>0.001) saves.push(sbInsert('invoices',{branch:'Rototuna',date:split.nextMonday,supplier:sup,category:cat,supplier_group:cat,amount:parseFloat(split.rot.nextWeek.toFixed(2)),invoice_no:invNo,notes:baseNote+' (carried fwd)'}));
+      await Promise.all(saves);
+      showToast('Shared invoice saved — split across both branches!');
+    } else {
+      var fs=FOOD_SUPPLIERS;
+      await sbInsert('invoices',{branch:branch,date:dt,supplier:sup,supplier_group:fs.includes(sup)?'Food':'Other',category:fs.includes(sup)?'Food':'Other',amount:amt,invoice_no:invNo,notes:notes});
+      showToast('Invoice saved!');
+    }
+    clearScan();loadInvHistory();if(document.getElementById('tab-pl').style.display!=='none')loadPL();
   }catch(e){showToast('Error: '+e.message,true);}
   btn.disabled=false;btn.textContent='Save Invoice';
 }
