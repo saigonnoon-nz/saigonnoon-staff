@@ -7,96 +7,220 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
   :root {
-    --bg:#080c14; --bg2:#0d1320; --bg3:#111827; --card:#0f1923;
-    --border:#1e2d40; --cyan:#00d4ff; --cyan2:#0099bb;
-    --green:#00ff88; --amber:#ffb800; --red:#ff4466; --purple:#a855f7;
-    --text:#e0eaf5; --muted:#5a7a99; --glow:0 0 18px rgba(0,212,255,.25);
+    --bg:#111827; --bg2:#1f2937; --bg3:#0f172a; --card:#1f2937;
+    --border:#374151; --text:#f3f4f6; --muted:#6b7280; --muted2:#9ca3af;
+    /* CBD = blue (default) — these vars flip when body.roto is added */
+    --cyan:#93c5fd;
+    --cyan2:#2563eb;
+    --accent-dark:#1d4ed8;
+    --accent-light:rgba(37,99,235,.15);
+    --accent-glow:rgba(37,99,235,.2);
+    --accent-border:rgba(37,99,235,.35);
+    --green:#34d399; --red:#f87171; --amber:#fbbf24; --purple:#a78bfa;
+    --glow:0 0 18px rgba(37,99,235,.25);
+  }
+  /* ROTO = green */
+  body.roto {
+    --cyan:#6ee7b7;
+    --cyan2:#059669;
+    --accent-dark:#047857;
+    --accent-light:rgba(5,150,105,.15);
+    --accent-glow:rgba(5,150,105,.2);
+    --accent-border:rgba(5,150,105,.35);
+    --glow:0 0 18px rgba(5,150,105,.25);
   }
   * { box-sizing:border-box; margin:0; padding:0; }
   body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
-  header { background:linear-gradient(135deg,#0a1628,#0d1f35); border-bottom:1px solid var(--border); padding:14px 18px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:20; }
-  .logo { font-size:16px; font-weight:800; letter-spacing:.5px; }
-  .logo span { color:var(--cyan); text-shadow:0 0 12px rgba(0,212,255,.6); }
-  .conn { font-size:11px; display:flex; align-items:center; gap:6px; color:var(--muted); }
-  .dot { width:7px; height:7px; border-radius:50%; background:var(--red); flex-shrink:0; }
-  .dot.on { background:var(--green); box-shadow:0 0 8px rgba(0,255,136,.5); }
-  .tabs { display:flex; background:var(--bg2); border-bottom:1px solid var(--border); overflow-x:auto; position:sticky; top:53px; z-index:10; }
-  .tabs::-webkit-scrollbar { display:none; }
-  .tab { padding:12px 14px; cursor:pointer; font-size:12px; font-weight:700; white-space:nowrap; color:var(--muted); border-bottom:2px solid transparent; transition:all .15s; letter-spacing:.3px; }
-  .tab.active { color:var(--cyan); border-bottom-color:var(--cyan); text-shadow:0 0 10px rgba(0,212,255,.5); }
-  .tab:hover:not(.active) { color:var(--text); }
-  .content { padding:14px; max-width:680px; margin:0 auto; }
-  .branch-toggle { display:flex; gap:8px; margin-bottom:14px; }
-  .bbtn { flex:1; padding:10px; border:1px solid var(--border); border-radius:8px; background:var(--bg2); cursor:pointer; font-size:13px; font-weight:700; color:var(--muted); transition:all .15s; letter-spacing:.5px; }
-  .bbtn.active { border-color:var(--cyan); color:var(--cyan); background:rgba(0,212,255,.06); box-shadow:var(--glow); }
-  .card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:12px; box-shadow:0 4px 20px rgba(0,0,0,.4); }
+
+  /* STICKY SHELL — header + date bar + nav all stick together */
+  .sticky-shell { position:sticky; top:0; z-index:20; }
+
+  /* HEADER */
+  header { background:var(--accent-dark); padding:14px 16px; display:flex; align-items:center; justify-content:space-between; }
+  .hdr-left .greet { font-size:11px; color:var(--cyan); opacity:.85; margin-bottom:1px; }
+  .hdr-left .title { font-size:16px; font-weight:700; color:#fff; }
+  .hdr-right { display:flex; align-items:center; gap:10px; }
+  .conn { display:flex; align-items:center; gap:5px; }
+  .dot { width:6px; height:6px; border-radius:50%; background:var(--red); flex-shrink:0; }
+  .dot.on { background:var(--green); }
+  .connTxt { font-size:10px; color:rgba(255,255,255,.45); }
+  .branch-toggle { display:flex; background:rgba(0,0,0,.3); border-radius:20px; padding:3px; gap:2px; }
+  .btbtn { padding:5px 14px; border-radius:20px; font-size:12px; font-weight:600; border:none; background:none; cursor:pointer; color:rgba(255,255,255,.45); transition:all .2s; }
+  .btbtn.active { background:var(--cyan2); color:#fff; }
+
+  /* DATE BAR */
+  .date-bar { background:var(--bg2); padding:7px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); }
+  .date-chip { font-size:12px; color:var(--muted2); }
+  .branch-chip { font-size:11px; font-weight:600; color:var(--cyan); }
+
+  /* CONTENT */
+  .content { padding:14px; max-width:720px; margin:0 auto; }
+
+  /* CARDS */
+  .card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:12px; }
   .card h2 { font-size:12px; font-weight:700; color:var(--cyan); letter-spacing:.6px; text-transform:uppercase; margin-bottom:14px; }
-  .sub-tabs { display:flex; gap:4px; margin-bottom:16px; background:var(--bg2); border:1px solid var(--border); border-radius:9px; padding:4px; }
-  .stab { flex:1; padding:8px 4px; text-align:center; font-size:12px; font-weight:700; color:var(--muted); border-radius:6px; cursor:pointer; letter-spacing:.3px; transition:all .15s; }
-  .stab.active { background:rgba(0,212,255,.12); color:var(--cyan); }
-  label { display:block; font-size:11px; color:var(--muted); margin:12px 0 5px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; }
+
+  /* HOME TILES */
+  .tiles { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px; }
+  .tile { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:14px; cursor:pointer; transition:transform .12s; -webkit-tap-highlight-color:transparent; }
+  .tile:active { transform:scale(.96); }
+  .tile-icon { width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; margin-bottom:8px; font-size:18px; }
+  .tile-label { font-size:13px; font-weight:600; color:var(--text); }
+  .tile-sub { font-size:11px; color:var(--muted); margin-top:2px; }
+
+  /* FORMS */
+  label { display:block; font-size:11px; color:var(--muted2); margin:12px 0 5px; font-weight:600; text-transform:uppercase; letter-spacing:.4px; }
   input,select,textarea { width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:8px; font-size:14px; outline:none; transition:border .15s; background:var(--bg2); color:var(--text); }
-  input:focus,select:focus,textarea:focus { border-color:var(--cyan); box-shadow:0 0 0 3px rgba(0,212,255,.1); }
+  input:focus,select:focus,textarea:focus { border-color:var(--cyan2); box-shadow:0 0 0 3px var(--accent-glow); }
   input[type='date']::-webkit-calendar-picker-indicator,
   input[type='month']::-webkit-calendar-picker-indicator { filter:brightness(0) invert(1); opacity:.8; cursor:pointer; }
-  select option { background:var(--bg3); }
-  .btn { display:block; width:100%; padding:13px; background:linear-gradient(135deg,var(--cyan2),var(--cyan)); color:#080c14; border:none; border-radius:8px; font-size:14px; font-weight:800; cursor:pointer; margin-top:14px; letter-spacing:.5px; transition:all .15s; }
-  .btn:hover { box-shadow:0 0 24px rgba(0,212,255,.4); transform:translateY(-1px); }
-  .btn:disabled { background:var(--border); color:var(--muted); cursor:not-allowed; transform:none; box-shadow:none; }
-  .btn-sm { display:inline-flex; align-items:center; padding:7px 13px; border-radius:7px; font-size:12px; font-weight:700; cursor:pointer; border:none; letter-spacing:.3px; gap:5px; }
-  .btn-purple { background:rgba(168,85,247,.15); color:var(--purple); border:1px solid rgba(168,85,247,.3); }
-  .btn-blue   { background:rgba(0,153,255,.12); color:#3b9eff; border:1px solid rgba(59,158,255,.3); }
-  .btn-red    { background:rgba(255,68,102,.1);  color:var(--red);   border:1px solid rgba(255,68,102,.25); }
-  .btn-green  { background:rgba(0,255,136,.1);   color:var(--green); border:1px solid rgba(0,255,136,.25); }
+  select option { background:var(--bg2); }
+
+  /* BUTTONS */
+  .btn { display:block; width:100%; padding:13px; background:var(--cyan2); color:#fff; border:none; border-radius:8px; font-size:14px; font-weight:700; cursor:pointer; margin-top:14px; letter-spacing:.3px; transition:all .15s; }
+  .btn:hover { filter:brightness(1.1); }
+  .btn:disabled { background:var(--border); color:var(--muted); cursor:not-allowed; filter:none; }
+  .btn-sm { display:inline-flex; align-items:center; padding:7px 13px; border-radius:7px; font-size:12px; font-weight:600; cursor:pointer; border:none; letter-spacing:.3px; gap:5px; }
+  .btn-accent { background:var(--accent-light); color:var(--cyan); border:1px solid var(--accent-border); }
+  .btn-purple { background:rgba(167,139,250,.15); color:var(--purple); border:1px solid rgba(167,139,250,.3); }
+  .btn-blue   { background:rgba(96,165,250,.12); color:#93c5fd; border:1px solid rgba(96,165,250,.3); }
+  .btn-red    { background:rgba(248,113,113,.1);  color:var(--red);    border:1px solid rgba(248,113,113,.25); }
+  .btn-green  { background:rgba(52,211,153,.1);   color:var(--green);  border:1px solid rgba(52,211,153,.25); }
+
+  /* SCAN */
   .scan-btns { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:14px; }
-  .scan-overlay { display:none; background:rgba(0,212,255,.04); border:1px solid rgba(0,212,255,.15); border-radius:10px; padding:24px; text-align:center; margin-bottom:12px; }
-  .spinner { width:32px; height:32px; border:2px solid var(--border); border-top-color:var(--cyan); border-radius:50%; animation:spin .8s linear infinite; margin:0 auto 12px; }
+  .scan-overlay { display:none; background:var(--accent-light); border:1px solid var(--accent-border); border-radius:10px; padding:24px; text-align:center; margin-bottom:12px; }
+  .spinner { width:32px; height:32px; border:2px solid var(--border); border-top-color:var(--cyan2); border-radius:50%; animation:spin .8s linear infinite; margin:0 auto 12px; }
   @keyframes spin { to { transform:rotate(360deg); } }
-  .ai-badge { display:inline-flex; align-items:center; gap:6px; background:rgba(168,85,247,.1); color:var(--purple); border:1px solid rgba(168,85,247,.25); border-radius:20px; padding:5px 12px; font-size:11px; font-weight:700; margin-bottom:12px; }
-  .scan-error { display:none; background:rgba(255,68,102,.08); border:1px solid rgba(255,68,102,.25); border-radius:8px; padding:12px; margin-bottom:12px; font-size:13px; color:var(--red); }
+  .ai-badge { display:inline-flex; align-items:center; gap:6px; background:rgba(167,139,250,.1); color:var(--purple); border:1px solid rgba(167,139,250,.25); border-radius:20px; padding:5px 12px; font-size:11px; font-weight:700; margin-bottom:12px; }
+  .scan-error { display:none; background:rgba(248,113,113,.08); border:1px solid rgba(248,113,113,.25); border-radius:8px; padding:12px; margin-bottom:12px; font-size:13px; color:var(--red); }
+
+  /* INVOICE CARDS */
   .inv-card { background:var(--bg2); border:1px solid var(--border); border-radius:10px; margin-bottom:10px; overflow:hidden; }
   .inv-card-head { display:flex; align-items:center; justify-content:space-between; padding:12px 14px; cursor:pointer; }
   .inv-card-head:hover { background:rgba(255,255,255,.02); }
   .inv-card-body { padding:0 14px 14px; border-top:1px solid var(--border); display:none; }
   .inv-card.open .inv-card-body { display:block; }
-  .inv-detail-row { display:flex; justify-content:space-between; font-size:12px; padding:6px 0; border-bottom:1px solid rgba(30,45,64,.5); color:var(--muted); }
+  .inv-detail-row { display:flex; justify-content:space-between; font-size:12px; padding:6px 0; border-bottom:1px solid rgba(55,65,81,.5); color:var(--muted2); }
   .inv-detail-row span:last-child { color:var(--text); font-weight:600; }
   .inv-actions { display:flex; gap:8px; margin-top:12px; }
-  .inv-edit-form { background:rgba(0,212,255,.03); border:1px solid rgba(0,212,255,.1); border-radius:8px; padding:14px; margin-top:10px; }
+  .inv-edit-form { background:var(--accent-light); border:1px solid var(--accent-border); border-radius:8px; padding:14px; margin-top:10px; }
   .edit-row2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-  .calc-row { display:flex; justify-content:space-between; font-size:13px; padding:7px 0; border-bottom:1px solid rgba(30,45,64,.7); }
-  .calc-row.net { font-weight:800; font-size:16px; color:var(--cyan); border-top:1px solid rgba(0,212,255,.2); padding-top:12px; border-bottom:none; }
-  .calc-row .lbl { color:var(--muted); }
-  .hist-item { padding:10px 0; border-bottom:1px solid rgba(30,45,64,.6); }
-  .hist-item:last-child { border-bottom:none; }
-  .hist-meta { font-size:11px; color:var(--muted); margin-top:4px; }
-  .loading-msg { text-align:center; padding:20px; color:var(--muted); font-size:13px; }
-  .pl-row { display:flex; justify-content:space-between; padding:7px 0; font-size:13px; border-bottom:1px solid rgba(30,45,64,.6); }
+
+  /* SALES SUB-TABS */
+  .sales-sub-tabs { display:flex; gap:4px; margin-bottom:16px; background:var(--bg2); border:1px solid var(--border); border-radius:9px; padding:4px; }
+  .sstab { flex:1; padding:8px 4px; text-align:center; font-size:12px; font-weight:600; color:var(--muted); border-radius:6px; cursor:pointer; transition:all .15s; }
+  .sstab.active { background:var(--accent-light); color:var(--cyan); }
+
+  /* P&L */
+  .sub-tabs { display:flex; gap:4px; margin-bottom:16px; background:var(--bg2); border:1px solid var(--border); border-radius:9px; padding:4px; }
+  .stab { flex:1; padding:8px 4px; text-align:center; font-size:12px; font-weight:600; color:var(--muted); border-radius:6px; cursor:pointer; transition:all .15s; }
+  .stab.active { background:var(--accent-light); color:var(--cyan); }
+  .calc-row { display:flex; justify-content:space-between; font-size:13px; padding:7px 0; border-bottom:1px solid rgba(55,65,81,.5); }
+  .calc-row.net { font-weight:800; font-size:16px; color:var(--cyan); border-top:1px solid var(--accent-border); padding-top:12px; border-bottom:none; }
+  .calc-row .lbl { color:var(--muted2); }
+  .pl-row { display:flex; justify-content:space-between; padding:7px 0; font-size:13px; border-bottom:1px solid rgba(55,65,81,.6); }
   .pl-row.hd { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.6px; padding-top:14px; border-bottom:none; font-weight:700; }
-  .pl-row.big { font-size:16px; font-weight:800; border-top:1px solid rgba(0,212,255,.2); padding-top:12px; border-bottom:none; }
+  .pl-row.big { font-size:16px; font-weight:800; border-top:1px solid var(--accent-border); padding-top:12px; border-bottom:none; }
   .pct { font-size:11px; color:var(--muted); margin-left:5px; }
   .pos { color:var(--green); } .neg { color:var(--red); }
   .bar-wrap { margin-top:16px; }
   .bar-lbl { display:flex; justify-content:space-between; font-size:11px; color:var(--muted); margin-bottom:4px; }
   .bar-track { background:rgba(255,255,255,.05); border-radius:4px; height:6px; overflow:hidden; margin-bottom:10px; }
   .bar-fill { height:100%; border-radius:4px; }
-  .bar-fill.g { background:linear-gradient(90deg,var(--green),#00cc6a); }
-  .bar-fill.a { background:linear-gradient(90deg,var(--amber),#ff9900); }
-  .bar-fill.r { background:linear-gradient(90deg,var(--red),#cc2244); }
+  .bar-fill.g { background:var(--green); }
+  .bar-fill.a { background:var(--amber); }
+  .bar-fill.r { background:var(--red); }
+
+  /* HISTORY */
+  .hist-item { padding:10px 0; border-bottom:1px solid rgba(55,65,81,.6); }
+  .hist-item:last-child { border-bottom:none; }
+  .hist-meta { font-size:11px; color:var(--muted); margin-top:4px; }
+  .loading-msg { text-align:center; padding:20px; color:var(--muted); font-size:13px; }
+
   /* ROSTER */
   .rtable { width:100%; border-collapse:collapse; }
-  .rtable th { padding:10px 8px; color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.5px; text-align:center; background:var(--bg2); border:1px solid var(--border); }
+  .rtable th { padding:10px 8px; color:var(--muted2); font-size:11px; text-transform:uppercase; letter-spacing:.5px; text-align:center; background:var(--bg2); border:1px solid var(--border); }
   .rtable th.nc { text-align:left; padding-left:12px; min-width:110px; }
   .rtable td { padding:10px 8px; text-align:center; border:1px solid var(--border); font-size:13px; }
   .rtable td.nc { text-align:left; padding-left:12px; white-space:nowrap; }
-  .rtable tr.am td { background:rgba(13,19,32,.5); }
-  .rtable tr.pm td { background:rgba(255,184,0,.04); }
+  .rtable tr.am td { background:rgba(31,41,55,.5); }
+  .rtable tr.pm td { background:rgba(251,191,36,.04); }
   .rtable tr.pos-hd td { background:var(--bg2); padding:8px 12px; }
   .shift-val { font-weight:700; color:var(--text); }
   .shift-cls { font-weight:700; color:var(--amber); }
-  .shift-nil { color:rgba(90,122,153,.3); }
-  .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:var(--bg3); color:var(--green); border:1px solid rgba(0,255,136,.3); padding:11px 22px; border-radius:8px; font-size:13px; font-weight:700; z-index:999; display:none; box-shadow:0 4px 20px rgba(0,0,0,.5); }
-  .toast.err { color:var(--red); border-color:rgba(255,68,102,.3); }
+  .shift-nil { color:rgba(107,114,128,.3); }
+
+  /* TOP NAV */
+  .top-nav { background:var(--bg3); border-bottom:1px solid var(--border); display:flex; }
+  .nav-item { flex:1; text-align:center; cursor:pointer; padding:10px 4px 9px; -webkit-tap-highlight-color:transparent; display:flex; flex-direction:column; align-items:center; gap:2px; }
+  .nav-icon { font-size:18px; display:block; filter:grayscale(1) opacity(.4); transition:filter .15s; }
+  .nav-label { font-size:10px; color:var(--muted); transition:color .15s; white-space:nowrap; }
+  .nav-item.active .nav-icon { filter:grayscale(0) opacity(1); }
+  .nav-item.active .nav-label { color:var(--cyan); font-weight:600; }
+  .nav-item:hover:not(.active) .nav-icon { filter:grayscale(0) opacity(.7); }
+
+  /* TOAST */
+  .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:var(--card); color:var(--green); border:1px solid rgba(52,211,153,.3); padding:11px 22px; border-radius:8px; font-size:13px; font-weight:700; z-index:999; display:none; box-shadow:0 4px 20px rgba(0,0,0,.5); white-space:nowrap; }
+  .toast.err { color:var(--red); border-color:rgba(248,113,113,.3); }
+
+  /* ── DESKTOP (768px+) ──────────────────────────────────────────── */
+  @media (min-width:768px) {
+    /* Header */
+    header { padding:16px 28px; }
+    .hdr-left .greet { font-size:12px; }
+    .hdr-left .title { font-size:20px; }
+    .btbtn { padding:6px 20px; font-size:13px; }
+
+    /* Date bar */
+    .date-bar { padding:8px 28px; }
+    .date-chip { font-size:13px; }
+    .branch-chip { font-size:12px; }
+
+    /* Nav — inline icon + label on desktop */
+    .nav-item { flex-direction:row; justify-content:center; gap:8px; padding:13px 12px; }
+    .nav-icon { font-size:17px; }
+    .nav-label { font-size:13px; }
+
+    /* Content */
+    .content { padding:24px 28px; max-width:1080px; }
+
+    /* Cards */
+    .card { padding:20px 22px; }
+    .card h2 { font-size:13px; }
+
+    /* Home tiles — 4 across on desktop */
+    .tiles { grid-template-columns:repeat(4,1fr); }
+    .tile { padding:18px; }
+    .tile-icon { width:42px; height:42px; font-size:22px; }
+    .tile-label { font-size:14px; }
+
+    /* Forms */
+    label { font-size:12px; }
+    input,select,textarea { font-size:14px; padding:11px 14px; }
+
+    /* Invoice tab — scan + history side by side */
+    .invoice-cols { display:grid; grid-template-columns:1fr 1fr; gap:16px; align-items:start; }
+
+    /* Sales summary row */
+    .sales-cols { display:grid; grid-template-columns:1fr 1fr; gap:16px; align-items:start; }
+
+    /* P&L rows wider */
+    .pl-row { font-size:14px; padding:8px 0; }
+    .pl-row.big { font-size:18px; }
+    .calc-row { font-size:14px; }
+    .calc-row.net { font-size:18px; }
+
+    /* Roster table */
+    .rtable th,.rtable td { font-size:13px; padding:11px 10px; }
+
+    /* Buttons */
+    .btn { font-size:15px; padding:14px; }
+    .btn-sm { font-size:13px; padding:9px 16px; }
+  }
+
+
+  /* CONFIRM */
   .confirm-overlay { position:fixed; inset:0; background:rgba(0,0,0,.75); z-index:100; display:none; align-items:center; justify-content:center; }
   .confirm-box { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:24px; max-width:320px; width:90%; text-align:center; }
   .confirm-box p { margin-bottom:18px; font-size:14px; line-height:1.5; color:var(--text); }
@@ -105,27 +229,81 @@
 </head>
 <body>
 
-<header>
-  <div class="logo">🍜 SAIGON <span>NOON</span> <span style="color:var(--muted);font-size:11px;font-weight:500">STAFF</span></div>
-  <div class="conn"><div class="dot" id="dot"></div><span id="connTxt">Connecting…</span></div>
-</header>
+<div class="sticky-shell">
+  <header>
+    <div class="hdr-left">
+      <div class="greet" id="hdrGreet">Good morning 👋</div>
+      <div class="title">Saigon Noon</div>
+    </div>
+    <div class="hdr-right">
+      <div class="conn"><div class="dot" id="dot"></div><span class="connTxt" id="connTxt">...</span></div>
+      <div class="branch-toggle">
+        <button class="btbtn active" id="bCBD" onclick="setBranch('CBD')">CBD</button>
+        <button class="btbtn" id="bRoto" onclick="setBranch('Rototuna')">ROTO</button>
+      </div>
+    </div>
+  </header>
 
-<div class="tabs">
-  <div class="tab active" onclick="showTab('invoice')">🧾 Invoice</div>
-  <div class="tab" onclick="showTab('sales')">💰 Sales</div>
-  <div class="tab" onclick="showTab('pl')">📊 P&amp;L</div>
-  <div class="tab" onclick="showTab('history')">📋 History</div>
-  <div class="tab" onclick="showTab('roster')">📅 Roster</div>
+  <div class="date-bar">
+    <div class="date-chip" id="dateBar"></div>
+    <div class="branch-chip" id="branchChip">CBD branch</div>
+  </div>
+
+  <nav class="top-nav">
+    <div class="nav-item active" id="nav-home" onclick="showTab('home')">
+      <span class="nav-icon">🏠</span>
+      <span class="nav-label">Home</span>
+    </div>
+    <div class="nav-item" id="nav-invoice" onclick="showTab('invoice')">
+      <span class="nav-icon">🧾</span>
+      <span class="nav-label">Invoice</span>
+    </div>
+    <div class="nav-item" id="nav-sales" onclick="showTab('sales')">
+      <span class="nav-icon">💰</span>
+      <span class="nav-label">Sales</span>
+    </div>
+    <div class="nav-item" id="nav-history" onclick="showTab('history')">
+      <span class="nav-icon">📋</span>
+      <span class="nav-label">History</span>
+    </div>
+    <div class="nav-item" id="nav-roster" onclick="showTab('roster')">
+      <span class="nav-icon">📅</span>
+      <span class="nav-label">Roster</span>
+    </div>
+  </nav>
 </div>
 
 <div class="content">
-  <div class="branch-toggle">
-    <button class="bbtn active" id="bCBD" onclick="setBranch('CBD')">🏙 CBD</button>
-    <button class="bbtn" id="bRot" onclick="setBranch('Rototuna')">🏘 Rototuna</button>
+
+  <!-- HOME TAB -->
+  <div id="tab-home">
+    <div class="tiles">
+      <div class="tile" onclick="showTab('invoice')">
+        <div class="tile-icon" style="background:var(--accent-light)">📷</div>
+        <div class="tile-label">Add invoice</div>
+        <div class="tile-sub">Scan or upload</div>
+      </div>
+      <div class="tile" onclick="showTab('sales')">
+        <div class="tile-icon" style="background:rgba(96,165,250,.15)">💰</div>
+        <div class="tile-label">Enter sales</div>
+        <div class="tile-sub">Today's takings</div>
+      </div>
+      <div class="tile" onclick="showTab('history')">
+        <div class="tile-icon" style="background:rgba(167,139,250,.15)">📋</div>
+        <div class="tile-label">History</div>
+        <div class="tile-sub">View records</div>
+      </div>
+      <div class="tile" onclick="showTab('roster')">
+        <div class="tile-icon" style="background:rgba(251,191,36,.12)">📅</div>
+        <div class="tile-label">My roster</div>
+        <div class="tile-sub">This week</div>
+      </div>
+    </div>
   </div>
 
   <!-- INVOICE TAB -->
-  <div id="tab-invoice">
+  <div id="tab-invoice" style="display:none">
+  <div class="invoice-cols">
     <div class="card">
       <h2>🧾 Invoice Entry</h2>
       <div class="scan-btns">
@@ -136,11 +314,11 @@
       <input type="file" id="fileInput" accept="image/*,application/pdf,.csv,.CSV" onchange="onFileSelect(event)" style="display:none">
       <div id="previewWrap" style="display:none;position:relative;margin-bottom:12px">
         <img id="previewImg" src="" alt="" style="width:100%;border-radius:8px;max-height:200px;object-fit:cover;border:1px solid var(--border)">
-        <button onclick="clearScan()" style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,.7);color:white;border:1px solid rgba(255,255,255,.2);border-radius:50%;width:26px;height:26px;cursor:pointer;font-size:14px">x</button>
+        <button onclick="clearScan()" style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,.7);color:white;border:1px solid rgba(255,255,255,.2);border-radius:50%;width:26px;height:26px;cursor:pointer;font-size:14px">×</button>
       </div>
-      <div id="fileNameWrap" style="display:none;background:rgba(168,85,247,.08);border:1px solid rgba(168,85,247,.2);border-radius:8px;padding:10px 12px;margin-bottom:12px;align-items:center;justify-content:space-between">
+      <div id="fileNameWrap" style="display:none;background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.2);border-radius:8px;padding:10px 12px;margin-bottom:12px;align-items:center;justify-content:space-between">
         <span id="fileNameTxt" style="font-size:13px;color:var(--purple);font-weight:600"></span>
-        <button onclick="clearScan()" style="background:none;border:none;color:var(--purple);font-size:18px;cursor:pointer">x</button>
+        <button onclick="clearScan()" style="background:none;border:none;color:var(--purple);font-size:18px;cursor:pointer">×</button>
       </div>
       <div id="scanningOverlay" class="scan-overlay">
         <div class="spinner"></div>
@@ -148,7 +326,7 @@
         <div style="font-size:11px;color:var(--muted);margin-top:3px">AI is extracting all details</div>
       </div>
       <div id="scanError" class="scan-error"></div>
-      <div id="aiFilledBadge" class="ai-badge" style="display:none">AI auto-filled - please check and correct</div>
+      <div id="aiFilledBadge" class="ai-badge" style="display:none">✦ AI auto-filled — please check and correct</div>
       <label>Date</label><input type="date" id="invDate">
       <label>Supplier</label>
       <select id="invSupplier" onchange="onSupplierChange()">
@@ -158,76 +336,92 @@
         <option>Service Food</option><option>Butchery</option><option>Supermarket</option>
         <option>Drinks Supplier</option><option>OneStopPak</option><option>Other</option>
       </select>
-      <div id="splitBanner" style="display:none;background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.25);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--cyan);margin-top:4px">
-        ⚡ This invoice will be split 50/50 between CBD & Rototuna and distributed across the week automatically.
+      <div id="splitBanner" style="display:none;background:var(--accent-light);border:1px solid var(--accent-border);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--cyan);margin-top:4px">
+        ⚡ Split-cost supplier — will be divided 50/50 between CBD & Rototuna and distributed across the week automatically.
       </div>
       <label>Total Amount ($)</label><input type="number" id="invAmount" placeholder="0.00">
       <label>GST Amount ($)</label><input type="number" id="invGST" placeholder="0.00">
       <label>Invoice No.</label><input type="text" id="invNo" placeholder="e.g. INV-12345">
       <label>Notes</label><textarea id="invNotes" rows="2" placeholder="Optional..."></textarea>
       <div id="itemsBreakdown" style="display:none"></div>
-      <button class="btn" id="saveInvBtn" onclick="saveInvoice()">Save Invoice</button>
+      <button class="btn" id="saveInvBtn" onclick="saveInvoice()">Save Invoice · CBD</button>
     </div>
 
-    <div class="card">
-      <h2>Invoice History - <span id="invHistBranch" style="color:var(--muted)">CBD</span></h2>
+    <div class="card" style="margin-bottom:0">
+      <h2>Invoice History — <span id="invHistBranch" style="color:var(--muted)">CBD</span></h2>
       <div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:14px">
         <div style="flex:1"><label style="margin-top:0">Filter by date</label><input type="date" id="invHistDate"></div>
         <button class="btn-sm btn-blue" onclick="loadInvHistory()" style="margin-bottom:1px;padding:10px 14px">Load</button>
         <button class="btn-sm" onclick="clearDateFilter()" style="margin-bottom:1px;padding:10px 14px;background:var(--bg2);color:var(--muted);border:1px solid var(--border)">All</button>
       </div>
-      <div id="invHistList"><div class="loading-msg">Loading...</div></div>
+      <div id="invHistList"><div class="loading-msg">Select a date and tap Load</div></div>
     </div>
-  </div>
+  </div><!-- end invoice-cols -->
+  </div><!-- end tab-invoice -->
 
   <!-- SALES TAB -->
   <div id="tab-sales" style="display:none">
-    <div class="card">
-      <h2>Daily Sales Entry</h2>
-      <label>Date</label><input type="date" id="salesDate">
-      <label>In-House / Walk-in ($)</label><input type="number" id="inhouse" placeholder="0.00" oninput="calcSales()">
-      <label>Uber Eats - Gross $ (30% commission)</label><input type="number" id="uber" placeholder="0.00" oninput="calcSales()">
-      <label>DoorDash - Gross $ (27% commission)</label><input type="number" id="doordash" placeholder="0.00" oninput="calcSales()">
-      <label>BooknOrders ($)</label><input type="number" id="booknorders" placeholder="0.00" oninput="calcSales()">
-      <label>Notes</label><textarea id="salesNotes" rows="2" placeholder="Optional..."></textarea>
+    <div class="sales-sub-tabs">
+      <div class="sstab active" id="ssEnter" onclick="setSalesSection('enter')">Enter Sales</div>
+      <div class="sstab" id="ssView" onclick="setSalesSection('view')">View Sales</div>
+      <div class="sstab" id="ssPL" onclick="setSalesSection('pl')">P&amp;L</div>
     </div>
-    <div class="card">
-      <h2>Summary</h2>
-      <div class="calc-row"><span class="lbl">In-House</span><span id="rIH">$0.00</span></div>
-      <div class="calc-row"><span class="lbl">Uber net (after 30%)</span><span id="rUB">$0.00</span></div>
-      <div class="calc-row"><span class="lbl">DoorDash net (after 27%)</span><span id="rDD">$0.00</span></div>
-      <div class="calc-row"><span class="lbl">BooknOrders</span><span id="rBO">$0.00</span></div>
-      <div class="calc-row"><span class="lbl" style="color:var(--red)">Commission lost</span><span id="rCM" style="color:var(--red)">-$0.00</span></div>
-      <div class="calc-row net"><span>NET SALES</span><span id="rNT">$0.00</span></div>
-    </div>
-    <button class="btn" id="saveSalesBtn" onclick="saveSales()">Save Sales</button>
-    <div class="card" style="margin-top:12px">
-      <h2>📊 View Sales</h2>
-      <div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:12px">
-        <div style="flex:1"><label style="margin-top:0">Date</label><input type="date" id="viewSalesDate" onchange="loadViewSales()"></div>
-        <button class="btn-sm btn-blue" onclick="loadViewSales()" style="margin-bottom:1px;padding:10px 14px">Load</button>
-      </div>
-      <div id="viewSalesResult"><div class="loading-msg">Loading...</div></div>
-    </div>
-  </div>
 
-  <!-- P&L TAB -->
-  <div id="tab-pl" style="display:none">
-    <div class="card">
-      <h2>Profit and Loss</h2>
-      <div class="sub-tabs">
-        <div class="stab active" id="stDaily"   onclick="setPLMode('daily')">Daily</div>
-        <div class="stab"        id="stWeekly"  onclick="setPLMode('weekly')">Weekly</div>
-        <div class="stab"        id="stMonthly" onclick="setPLMode('monthly')">Monthly</div>
+    <!-- Enter Sales -->
+    <div id="salesEnterSection">
+    <div class="sales-cols">
+      <div class="card">
+        <h2>Daily Sales Entry</h2>
+        <label>Date</label><input type="date" id="salesDate">
+        <label>In-House / Walk-in ($)</label><input type="number" id="inhouse" placeholder="0.00" oninput="calcSales()">
+        <label>Uber Eats - Gross $ (30% commission)</label><input type="number" id="uber" placeholder="0.00" oninput="calcSales()">
+        <label>DoorDash - Gross $ (27% commission)</label><input type="number" id="doordash" placeholder="0.00" oninput="calcSales()">
+        <label>BooknOrders ($)</label><input type="number" id="booknorders" placeholder="0.00" oninput="calcSales()">
+        <label>Notes</label><textarea id="salesNotes" rows="2" placeholder="Optional..."></textarea>
       </div>
-      <div style="display:flex;gap:8px;align-items:flex-end;margin-top:10px">
-        <div style="flex:1" id="plDateDaily"><label style="margin-top:0">Date</label><input type="date" id="plDay" onchange="loadPL()" oninput="loadPL()"></div>
-        <div style="flex:1;display:none" id="plDateWeekly"><label style="margin-top:0">Week (Monday)</label><input type="date" id="plWeek" onchange="loadPL()" oninput="loadPL()"></div>
-        <div style="flex:1;display:none" id="plDateMonthly"><label style="margin-top:0">Month</label><input type="month" id="plMonth" onchange="loadPL()" oninput="loadPL()"></div>
-        <button class="btn-sm btn-blue" onclick="loadPL()" style="margin-bottom:1px;padding:10px 16px;white-space:nowrap">Load</button>
+      <div class="card" style="margin-bottom:0">
+        <h2>Summary</h2>
+        <div class="calc-row"><span class="lbl">In-House</span><span id="rIH">$0.00</span></div>
+        <div class="calc-row"><span class="lbl">Uber net (after 30%)</span><span id="rUB">$0.00</span></div>
+        <div class="calc-row"><span class="lbl">DoorDash net (after 27%)</span><span id="rDD">$0.00</span></div>
+        <div class="calc-row"><span class="lbl">BooknOrders</span><span id="rBO">$0.00</span></div>
+        <div class="calc-row"><span class="lbl" style="color:var(--red)">Commission lost</span><span id="rCM" style="color:var(--red)">-$0.00</span></div>
+        <div class="calc-row net"><span>NET SALES</span><span id="rNT">$0.00</span></div>
+        <button class="btn" id="saveSalesBtn" onclick="saveSales()">Save Sales · CBD</button>
+      </div>
+    </div><!-- end sales-cols -->
+    </div>
+
+    <!-- View Sales -->
+    <div id="salesViewSection" style="display:none">
+      <div class="card">
+        <h2>📊 View Sales</h2>
+        <div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:12px">
+          <div style="flex:1"><label style="margin-top:0">Date</label><input type="date" id="viewSalesDate" onchange="loadViewSales()"></div>
+          <button class="btn-sm btn-blue" onclick="loadViewSales()" style="margin-bottom:1px;padding:10px 14px">Load</button>
+        </div>
+        <div id="viewSalesResult"><div class="loading-msg">Loading...</div></div>
       </div>
     </div>
-    <div id="plOut"><div class="loading-msg">Loading...</div></div>
+
+    <!-- P&L -->
+    <div id="salesPLSection" style="display:none">
+      <div class="card">
+        <h2>Profit &amp; Loss</h2>
+        <div class="sub-tabs">
+          <div class="stab active" id="stDaily"   onclick="setPLMode('daily')">Daily</div>
+          <div class="stab"        id="stWeekly"  onclick="setPLMode('weekly')">Weekly</div>
+          <div class="stab"        id="stMonthly" onclick="setPLMode('monthly')">Monthly</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:flex-end;margin-top:10px">
+          <div style="flex:1" id="plDateDaily"><label style="margin-top:0">Date</label><input type="date" id="plDay" onchange="loadPL()" oninput="loadPL()"></div>
+          <div style="flex:1;display:none" id="plDateWeekly"><label style="margin-top:0">Week (Monday)</label><input type="date" id="plWeek" onchange="loadPL()" oninput="loadPL()"></div>
+          <div style="flex:1;display:none" id="plDateMonthly"><label style="margin-top:0">Month</label><input type="month" id="plMonth" onchange="loadPL()" oninput="loadPL()"></div>
+          <button class="btn-sm btn-blue" onclick="loadPL()" style="margin-bottom:1px;padding:10px 16px;white-space:nowrap">Load</button>
+        </div>
+      </div>
+      <div id="plOut"><div class="loading-msg">Loading...</div></div>
+    </div>
   </div>
 
   <!-- HISTORY TAB -->
@@ -241,9 +435,9 @@
       </div>
     </div>
     <div class="card"><h2>💰 Sales</h2><div id="hSales"><div class="loading-msg">Select a date above</div></div></div>
-    <div class="card" style="margin-top:12px"><h2>🧾 Invoices &nbsp;<span id="invTodayBadge" style="font-size:12px;font-weight:700;color:var(--cyan);background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.25);border-radius:20px;padding:3px 10px;vertical-align:middle"></span></h2><div id="hInv"><div class="loading-msg">Select a date above</div></div></div>
-    <div class="card" style="margin-top:12px">
-      <h2>📦 Item Usage</h2>
+    <div class="card"><h2>🧾 Invoices &nbsp;<span id="invTodayBadge" style="font-size:12px;font-weight:700;color:var(--cyan);background:var(--accent-light);border:1px solid var(--accent-border);border-radius:20px;padding:3px 10px;vertical-align:middle"></span></h2><div id="hInv"><div class="loading-msg">Select a date above</div></div></div>
+    <div class="card">
+      <h2>📦 Item Search</h2>
       <div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:12px;flex-wrap:wrap">
         <div style="flex:2;min-width:120px"><label style="margin-top:0">Search item</label><input type="text" id="itemSearch" placeholder="e.g. pork belly" style="width:100%;box-sizing:border-box"></div>
         <div style="flex:1;min-width:100px"><label style="margin-top:0">From</label><input type="date" id="itemFrom"></div>
@@ -257,25 +451,24 @@
   <!-- ROSTER TAB -->
   <div id="tab-roster" style="display:none">
     <div class="card" style="padding:12px 10px">
-      <!-- Week navigation -->
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
         <button class="btn-sm" onclick="shiftStaffRosterWeek(-1)" style="background:var(--bg2);color:var(--muted);border:1px solid var(--border);padding:8px 12px;font-size:16px">&#8249;</button>
         <div id="rosterWeekHeading" style="flex:1;text-align:center;font-size:12px;color:var(--cyan);font-weight:700"></div>
-        <button class="btn-sm" onclick="goToCurrentStaffWeek()" style="background:rgba(0,212,255,.08);color:var(--cyan);border:1px solid rgba(0,212,255,.3);padding:8px 10px;font-size:11px">Now</button>
+        <button class="btn-sm btn-accent" onclick="goToCurrentStaffWeek()" style="padding:8px 10px;font-size:11px">Now</button>
         <button class="btn-sm" onclick="shiftStaffRosterWeek(1)" style="background:var(--bg2);color:var(--muted);border:1px solid var(--border);padding:8px 12px;font-size:16px">&#8250;</button>
       </div>
-      <!-- Action buttons -->
       <div style="display:flex;gap:8px;margin-bottom:14px">
-        <button class="btn-sm btn-blue" onclick="printRoster()" style="flex:1;justify-content:center;padding:9px">&#128247; Print / PDF</button>
-        <button class="btn-sm btn-purple" onclick="screenshotRoster()" style="flex:1;justify-content:center;padding:9px">&#128248; Screenshot</button>
+        <button class="btn-sm btn-blue" onclick="printRoster()" style="flex:1;justify-content:center;padding:9px">🖨 Print / PDF</button>
+        <button class="btn-sm btn-purple" onclick="screenshotRoster()" style="flex:1;justify-content:center;padding:9px">📸 Screenshot</button>
       </div>
-      <!-- Roster table -->
       <div style="overflow-x:auto">
         <div id="rosterContent"><div class="loading-msg">Loading roster...</div></div>
       </div>
     </div>
   </div>
+
 </div>
+
 
 <div class="confirm-overlay" id="confirmOverlay" style="display:none">
   <div class="confirm-box">
@@ -305,23 +498,41 @@ async function sbSelect(t,qs){const r=await fetchWithTimeout(SB_URL+'/rest/v1/'+
 async function sbDelete(t,id){const r=await fetchWithTimeout(SB_URL+'/rest/v1/'+t+'?id=eq.'+id,{method:'DELETE',headers:SB_HDR});if(!r.ok)throw new Error(await r.text());}
 async function sbUpdate(t,id,d){const r=await fetchWithTimeout(SB_URL+'/rest/v1/'+t+'?id=eq.'+id,{method:'PATCH',headers:SB_HDR,body:JSON.stringify(d)});if(!r.ok)throw new Error(await r.text());}
 
-let branch='CBD',scanImageB64=null,scanCSVText=null,scanMediaType='image/jpeg',plMode='daily',lastScannedItems=[];
+let branch='CBD', scanImageB64=null, scanCSVText=null, scanMediaType='image/jpeg', plMode='daily', lastScannedItems=[];
 
+// ── BRANCH TOGGLE ─────────────────────────────────────────────────────────────
 function setBranch(b){
   branch=b;
-  document.getElementById('bCBD').classList.toggle('active',b==='CBD');
-  document.getElementById('bRot').classList.toggle('active',b==='Rototuna');
-  if(document.getElementById('tab-history').style.display!=='none'){document.getElementById('histBranch').textContent=branch;loadHistory();}
-  if(document.getElementById('tab-pl').style.display!=='none')loadPL();
-  if(document.getElementById('tab-roster').style.display!=='none')loadRoster();
-  if(document.getElementById('tab-invoice').style.display!=='none')loadInvHistory();
+  var isRoto=b==='Rototuna';
+  document.getElementById('bCBD').classList.toggle('active',!isRoto);
+  document.getElementById('bRoto').classList.toggle('active',isRoto);
+  document.body.classList.toggle('roto',isRoto);
+  document.getElementById('branchChip').textContent=(isRoto?'Rototuna':'CBD')+' branch';
+  // Update save button labels
+  var tag=isRoto?'ROTO':'CBD';
+  var sib=document.getElementById('saveInvBtn');if(sib)sib.textContent='Save Invoice · '+tag;
+  var ssb=document.getElementById('saveSalesBtn');if(ssb)ssb.textContent='Save Sales · '+tag;
+  // Refresh whichever tab is visible
+  var active=['home','invoice','sales','history','roster'].find(function(t){return document.getElementById('tab-'+t).style.display!=='none';});
+  if(active==='history'){document.getElementById('histBranch').textContent=branch;loadHistory();}
+  if(active==='roster')loadRoster();
+  if(active==='invoice'){document.getElementById('invHistBranch').textContent=branch;loadInvHistory();}
+  if(active==='sales'){
+    if(document.getElementById('salesViewSection').style.display!=='none')loadViewSales();
+    if(document.getElementById('salesPLSection').style.display!=='none')loadPL();
+  }
 }
+
+// ── TABS ──────────────────────────────────────────────────────────────────────
+var ALL_TABS=['home','invoice','sales','history','roster'];
 function showTab(name){
-  ['invoice','sales','pl','history','roster'].forEach(t=>document.getElementById('tab-'+t).style.display=t===name?'block':'none');
-  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['invoice','sales','pl','history','roster'][i]===name));
+  ALL_TABS.forEach(function(t){
+    document.getElementById('tab-'+t).style.display=t===name?'block':'none';
+    document.getElementById('nav-'+t).classList.toggle('active',t===name);
+  });
   if(name==='history'){
-    document.getElementById('histBranch').textContent=branch;loadHistory();
-    // Default item search date range: last 30 days
+    document.getElementById('histBranch').textContent=branch;
+    loadHistory();
     if(!document.getElementById('itemTo').value){
       var now=new Date();
       document.getElementById('itemTo').value=now.toLocaleDateString('en-CA');
@@ -329,20 +540,40 @@ function showTab(name){
       document.getElementById('itemFrom').value=d30.toLocaleDateString('en-CA');
     }
   }
-  if(name==='pl')loadPL();
   if(name==='roster')loadRoster();
+  if(name==='invoice'){document.getElementById('invHistBranch').textContent=branch;loadInvHistory();}
   if(name==='sales'){
-    if(!document.getElementById('viewSalesDate').value){
-      document.getElementById('viewSalesDate').value=new Date().toLocaleDateString('en-CA');
+    // Restore whichever sub-section was last active
+    var activeSSTab=document.querySelector('.sstab.active');
+    if(activeSSTab){
+      if(activeSSTab.id==='ssView'){
+        if(!document.getElementById('viewSalesDate').value) document.getElementById('viewSalesDate').value=new Date().toLocaleDateString('en-CA');
+        loadViewSales();
+      }
+      if(activeSSTab.id==='ssPL')loadPL();
     }
-    loadViewSales();
   }
 }
 
-// P&L
+// ── SALES SUB-TABS ────────────────────────────────────────────────────────────
+function setSalesSection(s){
+  document.getElementById('salesEnterSection').style.display=s==='enter'?'block':'none';
+  document.getElementById('salesViewSection').style.display=s==='view'?'block':'none';
+  document.getElementById('salesPLSection').style.display=s==='pl'?'block':'none';
+  ['enter','view','pl'].forEach(function(x){
+    document.getElementById('ss'+x[0].toUpperCase()+x.slice(1)).classList.toggle('active',x===s);
+  });
+  if(s==='view'){
+    if(!document.getElementById('viewSalesDate').value) document.getElementById('viewSalesDate').value=new Date().toLocaleDateString('en-CA');
+    loadViewSales();
+  }
+  if(s==='pl')loadPL();
+}
+
+// ── P&L ───────────────────────────────────────────────────────────────────────
 function setPLMode(m){
   plMode=m;
-  ['daily','weekly','monthly'].forEach(x=>{
+  ['daily','weekly','monthly'].forEach(function(x){
     document.getElementById('st'+x[0].toUpperCase()+x.slice(1)).classList.toggle('active',x===m);
     document.getElementById('plDate'+x[0].toUpperCase()+x.slice(1)).style.display=x===m?'block':'none';
   });
@@ -429,7 +660,7 @@ async function loadPL(){
     const bc=(pv,tgt)=>pv<=tgt?'g':pv<=tgt*1.15?'a':'r';
     const fp=net>0?(food/net)*100:0,lp=net>0?(labour/net)*100:0,xp=net>0?(fixed/net)*100:0;
     const lbl=plMode==='daily'?start:plMode==='weekly'?start+' to '+end:document.getElementById('plMonth').value;
-    document.getElementById('plOut').innerHTML='<div class="card"><div style="font-size:11px;color:var(--muted);margin-bottom:12px">'+branch+' - '+lbl+'</div>'+
+    document.getElementById('plOut').innerHTML='<div class="card"><div style="font-size:11px;color:var(--muted);margin-bottom:12px">'+branch+' — '+lbl+'</div>'+
       '<div class="pl-row hd"><span>REVENUE</span></div>'+
       '<div class="pl-row"><span class="lbl">Gross Sales</span><span><strong>'+fmt(gross)+'</strong></span></div>'+
       '<div class="pl-row"><span class="lbl" style="color:var(--red)">Commission (Uber 30% / DD 27%)</span><span style="color:var(--red)">-'+fmt(comm)+'</span></div>'+
@@ -447,7 +678,7 @@ async function loadPL(){
 }
 function bar(lbl,pv,tgt,cls){return'<div class="bar-lbl"><span>'+lbl+'</span><span>'+pv.toFixed(1)+'% / target '+tgt+'%</span></div><div class="bar-track"><div class="bar-fill '+cls+'" style="width:'+Math.min(pv,100)+'%"></div></div>';}
 
-// ROSTER
+// ── ROSTER ────────────────────────────────────────────────────────────────────
 function getDayDates(mondayStr, days) {
   var mon = new Date(mondayStr+'T00:00:00');
   var dayMap = {mon:0,tue:1,wed:2,thu:3,fri:4,sat:5,sun:6};
@@ -460,7 +691,6 @@ function getDayDates(mondayStr, days) {
 async function loadRoster(){
   var el=document.getElementById('rosterContent');
   var weekStr = staffRosterWeek;
-  // Week heading
   var monDate = new Date(weekStr+'T00:00:00');
   var sunDate = new Date(monDate); sunDate.setDate(sunDate.getDate()+6);
   var fmtD = function(d){ return d.toLocaleDateString('en-NZ',{day:'numeric',month:'short'}); };
@@ -480,7 +710,6 @@ async function loadRoster(){
     var bDays=b==='CBD'?['mon','tue','wed','thu','fri','sat']:['mon','tue','wed','thu','fri','sat','sun'];
     var dayLbl={mon:'Mon',tue:'Tue',wed:'Wed',thu:'Thu',fri:'Fri',sat:'Sat',sun:'Sun'};
     var dayDates=getDayDates(weekStr,bDays);
-    var col=b==='CBD'?'var(--cyan)':'var(--purple)';
 
     if(!bStaff.length){el.innerHTML='<div class="loading-msg">No staff for this branch.</div>';return;}
 
@@ -530,7 +759,7 @@ async function loadRoster(){
   }catch(e){el.innerHTML='<div class="loading-msg" style="color:var(--red)">Error: '+e.message+'</div>';}
 }
 
-// PRINT ROSTER
+// ── PRINT / SCREENSHOT ROSTER ─────────────────────────────────────────────────
 function printRoster(){
   var weekStr=getCurrentMonday();
   var monDate=new Date(weekStr+'T00:00:00');
@@ -567,45 +796,29 @@ function printRoster(){
   win.document.close();
 }
 
-// SCREENSHOT ROSTER
 async function screenshotRoster() {
   var el = document.getElementById('rosterContent');
   if (!el || typeof html2canvas === 'undefined') { showToast('Screenshot not available', true); return; }
   showToast('Capturing screenshot...');
   try {
-    // Wrap in a styled container for the screenshot
     var wrapper = document.createElement('div');
-    wrapper.style.cssText = 'background:#0f1923;padding:16px;border-radius:12px;display:inline-block;min-width:100%';
-    
-    // Add header
+    wrapper.style.cssText = 'background:#1f2937;padding:16px;border-radius:12px;display:inline-block;min-width:100%';
     var header = document.createElement('div');
-    header.style.cssText = 'color:#00d4ff;font-weight:800;font-size:14px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #1e2d40;font-family:Arial,sans-serif';
+    header.style.cssText = 'color:#93c5fd;font-weight:800;font-size:14px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #374151;font-family:Arial,sans-serif';
     header.textContent = '🍜 Saigon Noon – ' + branch + ' Roster';
     wrapper.appendChild(header);
-    
     var subheader = document.createElement('div');
-    subheader.style.cssText = 'color:#5a7a99;font-size:11px;margin-bottom:12px;font-family:Arial,sans-serif';
+    subheader.style.cssText = 'color:#6b7280;font-size:11px;margin-bottom:12px;font-family:Arial,sans-serif';
     subheader.textContent = document.getElementById('rosterWeekHeading').textContent;
     wrapper.appendChild(subheader);
-    
     var clone = el.cloneNode(true);
     wrapper.appendChild(clone);
-    
-    // Temporarily add to body for rendering
     wrapper.style.position = 'fixed';
     wrapper.style.left = '-9999px';
     wrapper.style.top = '0';
     document.body.appendChild(wrapper);
-    
-    var canvas = await html2canvas(wrapper, {
-      backgroundColor: '#0f1923',
-      scale: 2,
-      useCORS: true,
-      allowTaint: true
-    });
+    var canvas = await html2canvas(wrapper, {backgroundColor: '#1f2937',scale: 2,useCORS: true,allowTaint: true});
     document.body.removeChild(wrapper);
-    
-    // Download
     var link = document.createElement('a');
     var weekStr = staffRosterWeek.replace(/-/g, '');
     link.download = 'SaigonNoon_'+branch+'_Roster_'+weekStr+'.png';
@@ -617,10 +830,9 @@ async function screenshotRoster() {
   }
 }
 
-// INVOICE HISTORY
+// ── INVOICE HISTORY ───────────────────────────────────────────────────────────
 function clearDateFilter(){document.getElementById('invHistDate').value='';loadInvHistory();}
 
-// Event delegation — one listener handles all card clicks
 document.addEventListener('click',function(e){
   var head=e.target.closest('.inv-card-head');
   if(head){
@@ -655,11 +867,11 @@ document.addEventListener('click',function(e){
   if(action==='delete'){
     var label=btn.dataset.label;
     pendingDeleteId=id;
-    document.getElementById('confirmMsg').textContent='Delete invoice - '+label+'?';
+    document.getElementById('confirmMsg').textContent='Delete invoice — '+label+'?';
     document.getElementById('confirmOverlay').style.display='flex';
     document.getElementById('confirmYes').onclick=async function(){
       closeConfirm();
-      try{await sbDelete('invoices',pendingDeleteId);showToast('Invoice deleted');loadInvHistory();if(document.getElementById('tab-pl').style.display!=='none')loadPL();}
+      try{await sbDelete('invoices',pendingDeleteId);showToast('Invoice deleted');loadInvHistory();if(document.getElementById('salesPLSection').style.display!=='none')loadPL();}
       catch(ex){showToast('Error: '+ex.message,true);}
     };
   }
@@ -716,9 +928,10 @@ async function loadInvHistory(){
       +'</div>';
     }).join('');
     var total=inv.reduce(function(s,r){return s+(parseFloat(r.amount)||0);},0);
-    el.innerHTML+='<div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding:12px 14px;background:rgba(0,212,255,.06);border:1px solid rgba(0,212,255,.2);border-radius:10px;font-weight:800;font-size:14px"><span style="color:var(--muted)">Total'+(dv?' — '+dv:'')+' ('+inv.length+' invoice'+(inv.length===1?'':'s')+')</span><span style="color:var(--cyan)">$'+total.toFixed(2)+'</span></div>';
+    el.innerHTML+='<div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding:12px 14px;background:var(--accent-light);border:1px solid var(--accent-border);border-radius:10px;font-weight:800;font-size:14px"><span style="color:var(--muted)">Total'+(dv?' — '+dv:'')+' ('+inv.length+' invoice'+(inv.length===1?'':'s')+')</span><span style="color:var(--cyan)">$'+total.toFixed(2)+'</span></div>';
   }catch(ex){el.innerHTML='<div class="loading-msg" style="color:var(--red)">Error: '+ex.message+'</div>';}
 }
+
 async function saveEditSales(id){
   try{
     var ih=parseFloat(document.getElementById('se-ih-'+id).value)||0;
@@ -737,6 +950,7 @@ async function saveEditSales(id){
     showToast('Sales updated');loadHistory();
   }catch(e){showToast('Error: '+e.message,true);}
 }
+
 async function saveEditInv(id){
   try{
     const sup=document.getElementById('ed-sup-'+id).value;
@@ -745,7 +959,6 @@ async function saveEditInv(id){
     const invNo=document.getElementById('ed-no-'+id).value;
     const notes=document.getElementById('ed-notes-'+id).value;
     if(SPLIT_SUPPLIERS.includes(sup)){
-      // Delete original record, create split records
       await sbDelete('invoices',id);
       var split=calcSplit(amt,dt);
       var cat=FOOD_SUPPLIERS.includes(sup)?'Food':'Other';
@@ -762,14 +975,14 @@ async function saveEditInv(id){
       await sbUpdate('invoices',id,{date:dt,supplier:sup,category:fs.includes(sup)?'Food':'Other',supplier_group:fs.includes(sup)?'Food':'Other',amount:amt,invoice_no:invNo,notes:notes});
       showToast('Invoice updated');
     }
-    loadInvHistory();if(document.getElementById('tab-pl').style.display!=='none')loadPL();
+    loadInvHistory();if(document.getElementById('salesPLSection').style.display!=='none')loadPL();
   }catch(e){showToast('Error: '+e.message,true);}
 }
 
 var pendingDeleteId=null;
 function closeConfirm(){document.getElementById('confirmOverlay').style.display='none';}
 
-// HISTORY TAB
+// ── HISTORY TAB ───────────────────────────────────────────────────────────────
 function fmtTS(ts){
   if(!ts)return'';
   try{
@@ -778,6 +991,7 @@ function fmtTS(ts){
            d.toLocaleTimeString('en-NZ',{hour:'2-digit',minute:'2-digit',hour12:true});
   }catch(e){return ts;}
 }
+
 async function loadItemUsage(){
   var el=document.getElementById('itemUsageResult');
   el.innerHTML='<div class="loading-msg">Loading...</div>';
@@ -791,7 +1005,6 @@ async function loadItemUsage(){
     if(to)   qs+='&date=lte.'+to;
     var items=await sbSelect('invoice_items',qs);
     if(!items||!items.length){el.innerHTML='<div class="loading-msg">No items found</div>';return;}
-    // Group by week
     var byWeek={};
     items.forEach(function(r){
       var d=new Date(r.date+'T12:00:00');var dow=d.getDay();var diff=dow===0?-6:1-dow;
@@ -807,14 +1020,14 @@ async function loadItemUsage(){
     var unit=items[0].unit||'';
     var html='<div style="display:flex;gap:12px;margin-bottom:14px;padding:10px;background:var(--bg2);border-radius:8px;text-align:center">'
       +'<div style="flex:1"><div style="font-size:10px;color:var(--muted);margin-bottom:3px">Total Qty</div><div style="font-size:18px;font-weight:700;color:var(--cyan)">'+(totalQty?totalQty.toFixed(2)+' '+(unit):'—')+'</div></div>'
-      +'<div style="flex:1"><div style="font-size:10px;color:var(--muted);margin-bottom:3px">Total Spend</div><div style="font-size:18px;font-weight:700;color:var(--accent)">$'+totalSpend.toFixed(2)+'</div></div>'
+      +'<div style="flex:1"><div style="font-size:10px;color:var(--muted);margin-bottom:3px">Total Spend</div><div style="font-size:18px;font-weight:700;color:var(--cyan)">$'+totalSpend.toFixed(2)+'</div></div>'
       +'<div style="flex:1"><div style="font-size:10px;color:var(--muted);margin-bottom:3px">Avg/Week</div><div style="font-size:18px;font-weight:700;color:var(--text)">$'+(totalSpend/Math.max(Object.keys(byWeek).length,1)).toFixed(2)+'</div></div>'
       +'</div>';
     Object.entries(byWeek).sort(function(a,b){return b[0].localeCompare(a[0]);}).forEach(function(entry){
       var mon=entry[0],wk=entry[1];
       html+='<div style="margin-bottom:10px"><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Week of '+mon+' <span style="font-weight:400;color:var(--cyan)">'+wk.rows.length+' purchase'+(wk.rows.length>1?'s':'')+' · '+(wk.qty?wk.qty.toFixed(2)+' '+unit:'—')+' · $'+wk.total.toFixed(2)+'</span></div>';
       wk.rows.forEach(function(r){
-        html+='<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(30,45,64,.5);font-size:12px">'
+        html+='<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(55,65,81,.5);font-size:12px">'
           +'<span style="color:var(--text)">'+r.date+' <span style="color:var(--muted)">'+r.supplier+'</span> — '+(r.item_name||'')+(r.qty!=null?' × '+Number(r.qty).toFixed(2)+(r.unit?' '+r.unit:''):'')+'</span>'
           +'<span style="font-weight:700;color:var(--cyan);margin-left:8px">'+(r.total_price!=null?'$'+Number(r.total_price).toFixed(2):'')+'</span>'
           +'</div>';
@@ -822,7 +1035,7 @@ async function loadItemUsage(){
       html+='</div>';
     });
     el.innerHTML=html;
-  }catch(e){el.innerHTML='<div class="loading-msg" style="color:#ef4444">Error: '+e.message+'</div>';}
+  }catch(e){el.innerHTML='<div class="loading-msg" style="color:var(--red)">Error: '+e.message+'</div>';}
 }
 
 async function loadHistory(){
@@ -844,7 +1057,7 @@ async function loadHistory(){
         '<div class="inv-card-head" onclick="toggleSalesCard('+s.id+')">'+
           '<div>'+
             '<div style="font-size:13px;font-weight:700">'+s.date+'</div>'+
-            '<div style="font-size:11px;color:var(--muted);margin-top:2px">🕐 '+fmtTS(s.created_at)+'</div>'+
+            '<div style="font-size:11px;color:var(--muted);margin-top:2px">'+fmtTS(s.created_at)+'</div>'+
           '</div>'+
           '<div style="display:flex;align-items:center;gap:10px">'+
             '<span style="font-weight:800;color:var(--green)">Gross '+fmt(s.gross_total||0)+'</span>'+
@@ -894,9 +1107,9 @@ async function loadHistory(){
           '<div>'+
             '<div style="font-weight:700;font-size:13px">'+(i.supplier||'Unknown')+'</div>'+
             '<div class="hist-meta" style="margin-top:2px">'+i.date+' &nbsp;·&nbsp; '+(i.invoice_no||'No inv #')+'</div>'+
-            '<div class="hist-meta">🕐 '+fmtTS(i.created_at)+'</div>'+
+            '<div class="hist-meta">'+fmtTS(i.created_at)+'</div>'+
           '</div>'+
-          '<span class="hist-amt neg">-'+fmt(i.amount)+'</span>'+
+          '<span style="font-weight:800;color:var(--red);font-size:13px">-'+fmt(i.amount)+'</span>'+
         '</div>'+
         (i.notes?'<div class="hist-meta" style="margin-top:4px">'+i.notes+'</div>':'')+
       '</div>'
@@ -904,7 +1117,7 @@ async function loadHistory(){
   }catch(e){document.getElementById('hSales').innerHTML='<div class="loading-msg" style="color:var(--red)">Error: '+e.message+'</div>';}
 }
 
-// INIT
+// ── INIT ──────────────────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded',function(){
   var _now=new Date();
   var today=_now.getFullYear()+'-'+String(_now.getMonth()+1).padStart(2,'0')+'-'+String(_now.getDate()).padStart(2,'0');
@@ -915,16 +1128,20 @@ window.addEventListener('DOMContentLoaded',function(){
   document.getElementById('plDay').value=today;
   document.getElementById('plWeek').value=getCurrentMonday();
   document.getElementById('plMonth').value=today.slice(0,7);
-  loadPL();
-  // Check connection with a 5s timeout, non-blocking
+  // Greeting & date bar
+  var h=_now.getHours();
+  document.getElementById('hdrGreet').textContent=h<12?'Good morning 👋':h<17?'Good afternoon 👋':'Good evening 👋';
+  var days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  var months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  document.getElementById('dateBar').textContent=days[_now.getDay()]+', '+_now.getDate()+' '+months[_now.getMonth()]+' '+_now.getFullYear();
+  // Connection check
   var ctrl=new AbortController();
   var tid=setTimeout(function(){ctrl.abort();},5000);
   fetch(SB_URL+'/rest/v1/sales?limit=1',{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY},signal:ctrl.signal})
-    .then(function(){clearTimeout(tid);document.getElementById('dot').className='dot on';document.getElementById('connTxt').textContent='Connected';})
+    .then(function(){clearTimeout(tid);document.getElementById('dot').className='dot on';document.getElementById('connTxt').textContent='Live';})
     .catch(function(){document.getElementById('connTxt').textContent='Offline';});
-  // Don't auto-load — user taps Load button
-  document.getElementById('invHistList').innerHTML='<div class="loading-msg" style="color:var(--muted)">Select a date and tap Load</div>';
 });
+
 function localDate(d){
   return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
@@ -947,7 +1164,7 @@ function goToCurrentStaffWeek() {
   loadRoster();
 }
 
-// INVOICE SCANNER
+// ── INVOICE SCANNER ───────────────────────────────────────────────────────────
 function onFileSelect(e){const f=e.target.files[0];if(f)handleFile(f);e.target.value='';}
 function handleFile(file){
   clearScan();
@@ -982,31 +1199,31 @@ async function scanInvoice(){
     const data=await res.json();const text=data.content[0].text.trim();
     let parsed;
     try{parsed=JSON.parse(text);}catch(x){const m=text.match(/\{[\s\S]*\}/);if(m)parsed=JSON.parse(m[0]);else throw new Error('Could not parse AI response');}
-    // Date stays as today — don't overwrite with supplier's invoice date
     if(parsed.supplier){const sel=document.getElementById('invSupplier');const opts=Array.from(sel.options).map(function(o){return o.value;});const m=opts.find(function(o){return o.toLowerCase().includes((parsed.supplier||'').toLowerCase().split(' ')[0]);});sel.value=m||'';}
     if(parsed.total_amount)document.getElementById('invAmount').value=parsed.total_amount;
     if(parsed.gst_amount)document.getElementById('invGST').value=parsed.gst_amount;
     if(parsed.invoice_no)document.getElementById('invNo').value=parsed.invoice_no;
     if(parsed.items_summary)document.getElementById('invNotes').value=parsed.items_summary;
+    onSupplierChange();
     lastScannedItems=parsed.items||[];
     const iw=document.getElementById('itemsBreakdown');
     if(parsed.items&&parsed.items.length>0){
       const rows=parsed.items.map(function(it){
         var lineTotal=it.line_total!=null?it.line_total:(it.price!=null?it.price:null);
         var uprice=it.unit_price!=null?it.unit_price:(it.price!=null&&it.qty?null:it.price);
-        return '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(30,45,64,.5);font-size:12px">'+
+        return '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(55,65,81,.5);font-size:12px">'+
           '<span style="color:var(--text);flex:1">'+(it.name||'-')+(it.qty!=null?' × '+it.qty+(it.unit?' '+it.unit:''):'')+(uprice!=null?' @ $'+Number(uprice).toFixed(2):'')+'</span>'+
           '<span style="font-weight:700;color:var(--cyan);margin-left:8px">'+(lineTotal!=null?'$'+Number(lineTotal).toFixed(2):'')+'</span>'+
         '</div>';
       }).join('');
-      iw.innerHTML='<div style="margin-top:14px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px"><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">Items ('+parsed.items.length+') - '+(parsed.supplier||'?')+'</div>'+rows+'<div style="display:flex;justify-content:space-between;padding:8px 0 0;font-size:14px;font-weight:800;border-top:1px solid rgba(0,212,255,.2);margin-top:6px;color:var(--cyan)"><span>Total</span><span>$'+Number(parsed.total_amount||0).toFixed(2)+'</span></div></div>';
+      iw.innerHTML='<div style="margin-top:14px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px"><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">Items ('+parsed.items.length+') — '+(parsed.supplier||'?')+'</div>'+rows+'<div style="display:flex;justify-content:space-between;padding:8px 0 0;font-size:14px;font-weight:800;border-top:1px solid var(--accent-border);margin-top:6px;color:var(--cyan)"><span>Total</span><span>$'+Number(parsed.total_amount||0).toFixed(2)+'</span></div></div>';
       iw.style.display='block';
     }
     document.getElementById('scanningOverlay').style.display='none';document.getElementById('aiFilledBadge').style.display='inline-flex';showToast('Invoice scanned');
   }catch(e){showScanError('Scan failed: '+e.message);}
 }
 
-// Split-cost supplier logic
+// ── SPLIT COST LOGIC ──────────────────────────────────────────────────────────
 const SPLIT_SUPPLIERS = ['Gilmours','Drinks Supplier','OneStopPak'];
 const FOOD_SUPPLIERS  = ['Bid Food','Bid Fresh','Gilmours','PaknSave','Service Food','Butchery'];
 
@@ -1017,15 +1234,12 @@ function onSupplierChange(){
 
 function calcSplit(totalAmt, invDateStr){
   var d=new Date(invDateStr+'T12:00:00');
-  var dow=d.getDay(); // 0=Sun,1=Mon,...,6=Sat
+  var dow=d.getDay();
   var storeShare=totalAmt/2;
-  // CBD: Mon-Sat (6 days). remaining = days from invoice day to Sat inclusive
-  var cbdRem = dow===0 ? 0 : (7-dow); // Mon=6,Tue=5,Wed=4,Thu=3,Fri=2,Sat=1,Sun=0
+  var cbdRem = dow===0 ? 0 : (7-dow);
   var cbdOver= 6-cbdRem;
-  // Rototuna: Mon-Sun (7 days). remaining = days from invoice day to Sun inclusive
-  var rotRem = dow===0 ? 1 : (8-dow); // Mon=7,Tue=6,Wed=5,Thu=4,Fri=3,Sat=2,Sun=1
+  var rotRem = dow===0 ? 1 : (8-dow);
   var rotOver= 7-rotRem;
-  // Next Monday date
   var daysToMon = dow===0 ? 1 : 8-dow;
   var nextMon=new Date(d); nextMon.setDate(nextMon.getDate()+daysToMon);
   var nm=nextMon.getFullYear()+'-'+String(nextMon.getMonth()+1).padStart(2,'0')+'-'+String(nextMon.getDate()).padStart(2,'0');
@@ -1040,18 +1254,16 @@ async function saveInvoice(){
   const btn=document.getElementById('saveInvBtn');btn.disabled=true;btn.textContent='Saving...';
   try{
     const sup=document.getElementById('invSupplier').value;
-    if(!sup){showToast('Select a supplier',true);btn.disabled=false;btn.textContent='Save Invoice';return;}
+    if(!sup){showToast('Select a supplier',true);btn.disabled=false;btn.textContent='Save Invoice · '+(branch==='CBD'?'CBD':'ROTO');return;}
     const amt=parseFloat(document.getElementById('invAmount').value)||0;
     const dt=document.getElementById('invDate').value;
     const invNo=document.getElementById('invNo').value;
     const notes=document.getElementById('invNotes').value;
     const ago=new Date(Date.now()-180000).toISOString();
-    // Duplicate guard
     const dupes=await sbSelect('invoices','branch=eq.'+branch+'&supplier=eq.'+encodeURIComponent(sup)+'&amount=eq.'+amt+'&created_at=gte.'+ago+'&limit=1');
-    if(dupes&&dupes.length>0){showToast('Duplicate — this invoice was just saved',true);btn.disabled=false;btn.textContent='Save Invoice';return;}
+    if(dupes&&dupes.length>0){showToast('Duplicate — this invoice was just saved',true);btn.disabled=false;btn.textContent='Save Invoice · '+(branch==='CBD'?'CBD':'ROTO');return;}
 
     if(SPLIT_SUPPLIERS.includes(sup)){
-      // Split 50/50 across both branches, distributed across the week
       var split=calcSplit(amt,dt);
       var cat=FOOD_SUPPLIERS.includes(sup)?'Food':'Other';
       var baseNote=(notes?notes+' — ':'')+'Shared cost (÷2 stores, daily dist.)';
@@ -1061,7 +1273,6 @@ async function saveInvoice(){
       if(split.rot.thisWeek>0.001) saves.push(sbInsert('invoices',{branch:'Rototuna',date:dt,supplier:sup,category:cat,supplier_group:cat,amount:parseFloat(split.rot.thisWeek.toFixed(2)),invoice_no:invNo,notes:baseNote}));
       if(split.rot.nextWeek>0.001) saves.push(sbInsert('invoices',{branch:'Rototuna',date:split.nextMonday,supplier:sup,category:cat,supplier_group:cat,amount:parseFloat(split.rot.nextWeek.toFixed(2)),invoice_no:invNo,notes:baseNote+' (carried fwd)'}));
       await Promise.all(saves);
-      // Save items once (physical goods — branch is wherever invoice was scanned)
       try{await saveInvoiceItems(null,branch,dt,sup,lastScannedItems);}catch(e){showToast('Invoice saved but items failed: '+e.message,true);}
       showToast('Shared invoice saved — split across both branches!');
     } else {
@@ -1070,12 +1281,11 @@ async function saveInvoice(){
       try{await saveInvoiceItems(saved&&saved.id,branch,dt,sup,lastScannedItems);}catch(e){showToast('Invoice saved but items failed: '+e.message,true);}
       showToast('Invoice saved!');
     }
-    clearScan();loadInvHistory();if(document.getElementById('tab-pl').style.display!=='none')loadPL();
+    clearScan();loadInvHistory();if(document.getElementById('salesPLSection').style.display!=='none')loadPL();
   }catch(e){showToast('Error: '+e.message,true);}
-  btn.disabled=false;btn.textContent='Save Invoice';
+  btn.disabled=false;btn.textContent='Save Invoice · '+(branch==='CBD'?'CBD':'ROTO');
 }
 
-// Save scanned line items to invoice_items table
 async function saveInvoiceItems(invoiceId, itemBranch, itemDate, itemSupplier, items){
   if(!items||items.length===0) return;
   var rows=items.map(function(it){
@@ -1100,7 +1310,7 @@ async function saveInvoiceItems(invoiceId, itemBranch, itemDate, itemSupplier, i
   if(!r.ok){var msg=await r.text();throw new Error('Items DB error: '+msg);}
 }
 
-// SALES
+// ── SALES ─────────────────────────────────────────────────────────────────────
 function v(id){return parseFloat(document.getElementById(id).value)||0;}
 function fmt(n){return '$'+(n||0).toFixed(2);}
 function calcSales(){
@@ -1119,9 +1329,9 @@ async function loadViewSales(){
     var rows=await sbSelect('sales','branch=eq.'+branch+'&date=eq.'+dt+'&limit=5');
     if(!rows||!rows.length){el.innerHTML='<div class="loading-msg">No sales entry for this date</div>';return;}
     var r=rows[0];
-    var ub=Number(r.uber_total||0),uc=Number(r.uber_comm||0);
-    var dd=Number(r.doordash_total||0),dc=Number(r.doordash_comm||0);
-    var bo=Number(r.booknorders_total||0),ih=Number(r.inhouse_total||0);
+    var ub=Number(r.uber||0),uc=Number(r.uber_comm||0);
+    var dd=Number(r.doordash||0),dc=Number(r.doordash_comm||0);
+    var bo=Number(r.booknorders||0),ih=Number(r.inhouse||0);
     var gross=Number(r.gross_total||0),comm=Number(r.total_comm||0),net=Number(r.net_total||0);
     el.innerHTML=
       '<div class="calc-row"><span class="lbl">In-House</span><span>$'+ih.toFixed(2)+'</span></div>'+
@@ -1130,11 +1340,11 @@ async function loadViewSales(){
       (dd?'<div class="calc-row"><span class="lbl">DoorDash (gross)</span><span>$'+dd.toFixed(2)+'</span></div>'+
           '<div class="calc-row"><span class="lbl" style="color:var(--red)">DoorDash commission (27%)</span><span style="color:var(--red)">-$'+dc.toFixed(2)+'</span></div>':'')+
       (bo?'<div class="calc-row"><span class="lbl">BooknOrders</span><span>$'+bo.toFixed(2)+'</span></div>':'')+
-      '<div class="calc-row" style="border-top:1px solid rgba(0,212,255,.2);margin-top:6px"><span class="lbl">Gross Sales</span><span style="color:var(--cyan);font-weight:700">$'+gross.toFixed(2)+'</span></div>'+
+      '<div class="calc-row" style="border-top:1px solid var(--accent-border);margin-top:6px"><span class="lbl">Gross Sales</span><span style="color:var(--cyan);font-weight:700">$'+gross.toFixed(2)+'</span></div>'+
       '<div class="calc-row"><span class="lbl" style="color:var(--red)">Total Commission</span><span style="color:var(--red)">-$'+comm.toFixed(2)+'</span></div>'+
       '<div class="calc-row net"><span>NET SALES</span><span>$'+net.toFixed(2)+'</span></div>'+
       (r.notes?'<div style="margin-top:8px;font-size:12px;color:var(--muted)">Notes: '+r.notes+'</div>':'');
-  }catch(e){el.innerHTML='<div class="loading-msg" style="color:#ef4444">Error: '+e.message+'</div>';}
+  }catch(e){el.innerHTML='<div class="loading-msg" style="color:var(--red)">Error: '+e.message+'</div>';}
 }
 
 async function saveSales(){
@@ -1144,7 +1354,7 @@ async function saveSales(){
     await sbInsert('sales',{branch:branch,date:document.getElementById('salesDate').value,inhouse:ih,uber:ub,doordash:dd,booknorders:bo,gross_total:ih+ub+dd+bo,uber_comm:uc,doordash_comm:dc,total_comm:uc+dc,net_total:ih+(ub-uc)+(dd-dc)+bo,notes:document.getElementById('salesNotes').value});
     showToast('Sales saved!');['inhouse','uber','doordash','booknorders'].forEach(function(id){document.getElementById(id).value='';});document.getElementById('salesNotes').value='';calcSales();
   }catch(e){showToast('Error: '+e.message,true);}
-  btn.disabled=false;btn.textContent='Save Sales';
+  btn.disabled=false;btn.textContent='Save Sales · '+(branch==='CBD'?'CBD':'ROTO');
 }
 
 function showToast(msg,err){
