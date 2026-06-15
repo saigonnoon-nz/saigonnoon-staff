@@ -140,17 +140,17 @@
 
   /* ROSTER */
   .new-rtable { width:100%; border-collapse:collapse; font-size:12px; table-layout:fixed; }
-  .new-rtable th { padding:8px 4px; text-align:center; font-size:10px; font-weight:600; color:#94a3b8; background:#1a2236; border-bottom:1px solid rgba(255,255,255,.25); border-right:1px solid rgba(255,255,255,.12); }
+  .new-rtable th { padding:8px 4px; text-align:center; font-size:10px; font-weight:600; color:#94a3b8; background:#1a2236; border-bottom:2px solid rgba(255,255,255,.35); border-right:1px solid rgba(255,255,255,.25); }
   .new-rtable th:last-child { border-right:none; }
-  .new-rtable th.nh { text-align:left; padding-left:10px; border-right:1px solid rgba(255,255,255,.25); }
-  .new-rtable td { padding:0; text-align:center; border-bottom:1px solid rgba(255,255,255,.1); border-right:1px solid rgba(255,255,255,.1); vertical-align:top; }
+  .new-rtable th.nh { text-align:left; padding-left:10px; border-right:2px solid rgba(255,255,255,.35); }
+  .new-rtable td { padding:0; text-align:center; border-bottom:1px solid rgba(255,255,255,.2); border-right:1px solid rgba(255,255,255,.2); vertical-align:top; }
   .new-rtable td:last-child { border-right:none; }
   .new-rtable tr:last-child td { border-bottom:none; }
-  .new-rtable tr:hover td { background:rgba(255,255,255,.04); }
+  .new-rtable tr:hover td { background:rgba(255,255,255,.05); }
   .new-rtable tr:hover td.nc { background:#16213a; }
-  .new-rtable td.nc { text-align:left; padding-left:10px; font-size:12px; font-weight:600; color:#e2e8f0; vertical-align:middle; background:#141e30; border-right:1px solid rgba(255,255,255,.25); padding-right:4px; }
-  .new-rtable .slbl td { font-size:9px; font-weight:600; color:#64748b; letter-spacing:.8px; padding:5px 10px; background:#141e30; border-bottom:1px solid rgba(255,255,255,.1); border-right:none; }
-  .am-slot { height:24px; display:flex; align-items:center; justify-content:center; border-bottom:1px dashed rgba(255,255,255,.2); }
+  .new-rtable td.nc { text-align:left; padding-left:10px; font-size:12px; font-weight:600; color:#e2e8f0; vertical-align:middle; background:#141e30; border-right:2px solid rgba(255,255,255,.35); padding-right:4px; }
+  .new-rtable .slbl td { font-size:9px; font-weight:600; color:#64748b; letter-spacing:.8px; padding:5px 10px; background:#141e30; border-bottom:1px solid rgba(255,255,255,.2); border-right:none; }
+  .am-slot { height:24px; display:flex; align-items:center; justify-content:center; border-bottom:1px solid rgba(255,255,255,.2); }
   .pm-slot { height:24px; display:flex; align-items:center; justify-content:center; }
   .chip { padding:3px 6px; border-radius:4px; font-size:9px; font-weight:700; white-space:nowrap; display:inline-block; letter-spacing:.2px; }
   .chip.cb { background:#3b82f6; color:#fff; }
@@ -725,7 +725,7 @@ async function loadRoster(){
     function fmtSeg(seg){seg=(seg||'').trim();if(!seg)return '';var p=seg.split('-');if(p.length<2)return seg;return fmtT(p[0])+'–'+fmtT(p[1]);}
     function getAMPM(val){if(!val||!val.trim())return ['',''];var segs=val.trim().split('/');if(segs.length>=2)return [segs[0].trim(),segs[1].trim()];var startH=parseFloat((val.split('-')[0]||'').replace(':','.'));if(!isNaN(startH)&&startH>=15)return ['',val.trim()];return [val.trim(),''];}
     var ncW=72, dayW='calc((100% - '+ncW+'px) / '+bDays.length+')';
-    var html='<div style="border-radius:10px;overflow:hidden;border:1px solid rgba(100,116,139,.4)"><table class="new-rtable"><thead><tr>'+
+    var html='<div style="border-radius:10px;overflow:hidden;border:2px solid rgba(255,255,255,.35)"><table class="new-rtable"><thead><tr>'+
       '<th class="nh" style="width:'+ncW+'px">Staff</th>'+
       bDays.map(function(d,i){return '<th style="width:'+dayW+'">'+dayLbl[d]+'<br><span style="font-size:9px;color:#475569;font-weight:400">'+dayDates[i]+'</span></th>';}).join('')+
       '</tr></thead><tbody>';
