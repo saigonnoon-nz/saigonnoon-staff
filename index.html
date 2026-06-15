@@ -729,11 +729,14 @@ async function loadRoster(){
       var chipCls=pos==='BOH'?'chip-boh':'chip-foh';
       html+='<tr><td colspan="'+(bDays.length+1)+'" style="font-size:9px;font-weight:600;color:#64748b;letter-spacing:.8px;padding:5px 10px;background:#141e30;border-bottom:1px solid rgba(100,116,139,.2);border-right:none">'+pos+' — '+b+'</td></tr>';
       posStaff.forEach(function(s){
-        var row=roster.filter(function(r){return r.staff_id===s.id&&r.branch===b;})[0]||{};
+        var rows=roster.filter(function(r){return r.staff_id===s.id&&r.branch===b;});
+        var row=rows.find(function(r){return r.shift_num===1;})||rows[0]||{};
+        var row2=rows.find(function(r){return r.shift_num===2;})||{};
         html+='<tr>';
         html+='<td style="text-align:left;padding-left:10px;font-size:12px;font-weight:600;color:#e2e8f0;background:#141e30;border-right:1px solid rgba(100,116,139,.4);vertical-align:middle">'+s.name.split(' ')[0]+'</td>';
         bDays.forEach(function(d){
-          var val=(row[d]||'').trim();
+          var v1=(row[d]||'').trim(), v2=(row2[d]||'').trim();
+          var val=v1&&v2&&v1.indexOf('/')<0?v1+'/'+v2:(v1||v2);
           var ampm=getAMPM(val);
           html+='<td style="vertical-align:top">'+
             '<div class="am-slot">'+(ampm[0]?'<span class="'+chipCls+'">'+fmtSeg(ampm[0])+'</span>':'')+'</div>'+
