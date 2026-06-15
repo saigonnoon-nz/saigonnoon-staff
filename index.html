@@ -139,16 +139,16 @@
   .loading-msg { text-align:center; padding:20px; color:var(--muted); font-size:13px; }
 
   /* ROSTER */
-  .rtable { width:100%; border-collapse:collapse; }
-  .rtable th { padding:10px 8px; color:var(--muted2); font-size:11px; text-transform:uppercase; letter-spacing:.5px; text-align:center; background:var(--bg2); border:1px solid var(--border); }
-  .rtable th.nc { text-align:left; padding-left:12px; min-width:110px; }
-  .rtable td { padding:10px 8px; text-align:center; border:1px solid var(--border); font-size:13px; }
-  .rtable td.nc { text-align:left; padding-left:12px; white-space:nowrap; }
-  .rtable tr.am td { background:rgba(31,41,55,.5); }
-  .rtable tr.pm td { background:rgba(251,191,36,.04); }
-  .rtable tr.pos-hd td { background:var(--bg2); padding:8px 12px; }
-  .shift-val { font-weight:700; color:var(--text); }
-  .shift-cls { font-weight:700; color:var(--amber); }
+  .new-rtable { width:100%; border-collapse:collapse; table-layout:fixed; }
+  .new-rtable th { padding:8px 4px; text-align:center; font-size:10px; font-weight:600; color:#94a3b8; background:#1a2236; border-bottom:1px solid rgba(100,116,139,.4); border-right:1px solid rgba(100,116,139,.2); }
+  .new-rtable th:last-child { border-right:none; }
+  .new-rtable td { border-bottom:1px solid rgba(100,116,139,.2); border-right:1px solid rgba(100,116,139,.2); padding:0; vertical-align:top; }
+  .new-rtable td:last-child { border-right:none; }
+  .new-rtable tr:last-child td { border-bottom:none; }
+  .am-slot { height:26px; display:flex; align-items:center; justify-content:center; border-bottom:1px dashed rgba(100,116,139,.3); }
+  .pm-slot { height:26px; display:flex; align-items:center; justify-content:center; }
+  .chip-boh { background:#3b82f6; color:#fff; padding:3px 6px; border-radius:4px; font-size:9px; font-weight:700; white-space:nowrap; display:inline-block; }
+  .chip-foh { background:#10b981; color:#fff; padding:3px 6px; border-radius:4px; font-size:9px; font-weight:700; white-space:nowrap; display:inline-block; }
   .shift-nil { color:rgba(107,114,128,.3); }
 
   /* TOP NAV */
@@ -714,48 +714,36 @@ async function loadRoster(){
 
     if(!bStaff.length){el.innerHTML='<div class="loading-msg">No staff for this branch.</div>';return;}
 
-    var html='<table class="rtable"><thead><tr>'+
-      '<th class="nc">Staff</th>'+
-      bDays.map(function(d,i){return '<th>'+dayLbl[d]+'<br><span style="font-size:10px;color:var(--muted);font-weight:500">'+dayDates[i]+'</span></th>';}).join('')+
+    // helper functions
+    function fmtT(s){s=(s||'').trim();if(!s||s.toLowerCase()==='closed')return 'Closed';var p=s.split(':');return p[0].trim()+':'+(p[1]||'00').trim().padStart(2,'0');}
+    function fmtSeg(seg){seg=(seg||'').trim();if(!seg)return '';var p=seg.split('-');if(p.length<2)return seg;return fmtT(p[0])+'–'+fmtT(p[1]);}
+    function getAMPM(val){if(!val||!val.trim())return ['',''];var segs=val.trim().split('/');if(segs.length>=2)return [segs[0].trim(),segs[1].trim()];var startH=parseFloat((val.split('-')[0]||'').replace(':','.'));if(!isNaN(startH)&&startH>=15)return ['',val.trim()];return [val.trim(),''];}
+    var ncW=80, dayW='calc((100% - '+ncW+'px) / '+bDays.length+')';
+    var html='<div style="border-radius:10px;overflow:hidden;border:1px solid rgba(100,116,139,.4)"><table class="new-rtable"><thead><tr>'+
+      '<th style="width:'+ncW+'px;text-align:left;padding-left:10px;border-right:1px solid rgba(100,116,139,.4)">Staff</th>'+
+      bDays.map(function(d,i){return '<th style="width:'+dayW+'">'+dayLbl[d]+'<br><span style="font-size:9px;color:#475569;font-weight:400">'+dayDates[i]+'</span></th>';}).join('')+
       '</tr></thead><tbody>';
-
     ['BOH','FOH'].forEach(function(pos){
       var posStaff=bStaff.filter(function(s){return s.position===pos;});
       if(!posStaff.length)return;
-      var posCol=pos==='BOH'?'var(--amber)':'var(--purple)';
-      html+='<tr class="pos-hd"><td colspan="'+(bDays.length+1)+'" style="color:'+posCol+';font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;padding:8px 12px">'+
-        pos+' — '+(pos==='BOH'?'Back of House':'Front of House')+'</td></tr>';
-
+      var chipCls=pos==='BOH'?'chip-boh':'chip-foh';
+      html+='<tr><td colspan="'+(bDays.length+1)+'" style="font-size:9px;font-weight:600;color:#64748b;letter-spacing:.8px;padding:5px 10px;background:#141e30;border-bottom:1px solid rgba(100,116,139,.2);border-right:none">'+pos+' — '+b+'</td></tr>';
       posStaff.forEach(function(s){
-        var rows=roster.filter(function(r){return r.staff_id===s.id&&r.branch===b;})
-          .sort(function(a,c){
-            function firstStart(row){
-              var t=Infinity;
-              ['mon','tue','wed','thu','fri','sat','sun'].forEach(function(d){
-                var v=(row[d]||'').trim();
-                if(v){var h=parseFloat(v.split('-')[0].replace(':','.'));if(!isNaN(h)&&h<t)t=h;}
-              });
-              return t===Infinity?(row.shift_num||1):t;
-            }
-            return firstStart(a)-firstStart(c);
-          });
-        if(!rows.length)rows=[{shift_num:1,mon:'',tue:'',wed:'',thu:'',fri:'',sat:'',sun:''}];
-
-        rows.forEach(function(row,ri){
-          var cls=ri===0?'am':'pm';
-          html+='<tr class="'+cls+'">';
-          html+='<td class="nc">'+(ri===0?'<strong>'+s.name+'</strong>':'<span style="font-size:11px;color:var(--amber);padding-left:8px">↳ split</span>')+'</td>';
-          bDays.forEach(function(d){
-            var val=(row[d]||'').trim();
-            var isCls=val.toLowerCase().includes('closed');
-            html+='<td>'+(val?'<span class="'+(isCls?'shift-cls':'shift-val')+'">'+val+'</span>':'<span class="shift-nil">—</span>')+'</td>';
-          });
-          html+='</tr>';
+        var row=roster.filter(function(r){return r.staff_id===s.id&&r.branch===b;})[0]||{};
+        html+='<tr>';
+        html+='<td style="text-align:left;padding-left:10px;font-size:12px;font-weight:600;color:#e2e8f0;background:#141e30;border-right:1px solid rgba(100,116,139,.4);vertical-align:middle">'+s.name.split(' ')[0]+'</td>';
+        bDays.forEach(function(d){
+          var val=(row[d]||'').trim();
+          var ampm=getAMPM(val);
+          html+='<td style="vertical-align:top">'+
+            '<div class="am-slot">'+(ampm[0]?'<span class="'+chipCls+'">'+fmtSeg(ampm[0])+'</span>':'')+'</div>'+
+            '<div class="pm-slot">'+(ampm[1]?'<span class="'+chipCls+'">'+fmtSeg(ampm[1])+'</span>':'')+'</div>'+
+          '</td>';
         });
+        html+='</tr>';
       });
     });
-
-    html+='</tbody></table>';
+    html+='</tbody></table></div>';
     el.innerHTML=html;
   }catch(e){el.innerHTML='<div class="loading-msg" style="color:var(--red)">Error: '+e.message+'</div>';}
 }
