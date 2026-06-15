@@ -723,7 +723,7 @@ async function loadRoster(){
     // helper functions
     function fmtT(s){s=(s||'').trim();if(!s||s.toLowerCase()==='closed')return 'Closed';var p=s.split(':');return p[0].trim()+':'+(p[1]||'00').trim().padStart(2,'0');}
     function fmtSeg(seg){seg=(seg||'').trim();if(!seg)return '';var p=seg.split('-');if(p.length<2)return seg;return fmtT(p[0])+'–'+fmtT(p[1]);}
-    function getAMPM(val){if(!val||!val.trim())return ['',''];var segs=val.trim().split('/');if(segs.length>=2)return [segs[0].trim(),segs[1].trim()];var startH=parseFloat((val.split('-')[0]||'').replace(':','.'));if(!isNaN(startH)&&startH>=15)return ['',val.trim()];return [val.trim(),''];}
+    function getAMPM(val){if(!val||!val.trim())return ['',''];var segs=val.trim().split('/');if(segs.length>=2){var s0=parseFloat((segs[0].split('-')[0]||'').replace(':','.'));var s1=parseFloat((segs[1].split('-')[0]||'').replace(':','.'));return s0<=s1?[segs[0].trim(),segs[1].trim()]:[segs[1].trim(),segs[0].trim()];}var startH=parseFloat((val.split('-')[0]||'').replace(':','.'));if(!isNaN(startH)&&startH>=15)return ['',val.trim()];return [val.trim(),''];}
     var ncW=72, dayW='calc((100% - '+ncW+'px) / '+bDays.length+')';
     var html='<div style="border-radius:10px;overflow:hidden;border:2px solid rgba(255,255,255,.35)"><table class="new-rtable"><thead><tr>'+
       '<th class="nh" style="width:'+ncW+'px">Staff</th>'+
@@ -742,7 +742,7 @@ async function loadRoster(){
         html+='<td class="nc">'+s.name.split(' ')[0]+'</td>';
         bDays.forEach(function(d){
           var v1=(row[d]||'').trim(), v2=(row2[d]||'').trim();
-          var val=v1&&v2&&v1.indexOf('/')<0?v1+'/'+v2:(v1||v2);
+          var val;if(v1&&v2&&v1.indexOf('/')<0){var s1=parseFloat(v1.split('-')[0].replace(':','.'));var s2=parseFloat(v2.split('-')[0].replace(':','.'));val=s1<=s2?v1+'/'+v2:v2+'/'+v1;}else{val=v1||v2;}
           var ampm=getAMPM(val);
           html+='<td>'+
             '<div class="am-slot">'+(ampm[0]?'<span class="chip '+chipCol+'">'+fmtSeg(ampm[0])+'</span>':'')+'</div>'+
