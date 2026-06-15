@@ -139,16 +139,22 @@
   .loading-msg { text-align:center; padding:20px; color:var(--muted); font-size:13px; }
 
   /* ROSTER */
-  .new-rtable { width:100%; border-collapse:collapse; table-layout:fixed; }
+  .new-rtable { width:100%; border-collapse:collapse; font-size:12px; table-layout:fixed; }
   .new-rtable th { padding:8px 4px; text-align:center; font-size:10px; font-weight:600; color:#94a3b8; background:#1a2236; border-bottom:1px solid rgba(100,116,139,.4); border-right:1px solid rgba(100,116,139,.2); }
   .new-rtable th:last-child { border-right:none; }
-  .new-rtable td { border-bottom:1px solid rgba(100,116,139,.2); border-right:1px solid rgba(100,116,139,.2); padding:0; vertical-align:top; }
+  .new-rtable th.nh { text-align:left; padding-left:10px; border-right:1px solid rgba(100,116,139,.4); }
+  .new-rtable td { padding:0; text-align:center; border-bottom:1px solid rgba(100,116,139,.2); border-right:1px solid rgba(100,116,139,.2); vertical-align:top; }
   .new-rtable td:last-child { border-right:none; }
   .new-rtable tr:last-child td { border-bottom:none; }
-  .am-slot { height:26px; display:flex; align-items:center; justify-content:center; border-bottom:1px dashed rgba(100,116,139,.3); }
-  .pm-slot { height:26px; display:flex; align-items:center; justify-content:center; }
-  .chip-boh { background:#3b82f6; color:#fff; padding:3px 6px; border-radius:4px; font-size:9px; font-weight:700; white-space:nowrap; display:inline-block; }
-  .chip-foh { background:#10b981; color:#fff; padding:3px 6px; border-radius:4px; font-size:9px; font-weight:700; white-space:nowrap; display:inline-block; }
+  .new-rtable tr:hover td { background:rgba(100,116,139,.07); }
+  .new-rtable tr:hover td.nc { background:#16213a; }
+  .new-rtable td.nc { text-align:left; padding-left:10px; font-size:12px; font-weight:600; color:#e2e8f0; vertical-align:middle; background:#141e30; border-right:1px solid rgba(100,116,139,.4); padding-right:4px; }
+  .new-rtable .slbl td { font-size:9px; font-weight:600; color:#64748b; letter-spacing:.8px; padding:5px 10px; background:#141e30; border-bottom:1px solid rgba(100,116,139,.2); border-right:none; }
+  .am-slot { height:24px; display:flex; align-items:center; justify-content:center; border-bottom:1px dashed rgba(100,116,139,.3); }
+  .pm-slot { height:24px; display:flex; align-items:center; justify-content:center; }
+  .chip { padding:3px 6px; border-radius:4px; font-size:9px; font-weight:700; white-space:nowrap; display:inline-block; letter-spacing:.2px; }
+  .chip.cb { background:#3b82f6; color:#fff; }
+  .chip.cg { background:#10b981; color:#fff; }
   .shift-nil { color:rgba(107,114,128,.3); }
 
   /* TOP NAV */
@@ -718,29 +724,29 @@ async function loadRoster(){
     function fmtT(s){s=(s||'').trim();if(!s||s.toLowerCase()==='closed')return 'Closed';var p=s.split(':');return p[0].trim()+':'+(p[1]||'00').trim().padStart(2,'0');}
     function fmtSeg(seg){seg=(seg||'').trim();if(!seg)return '';var p=seg.split('-');if(p.length<2)return seg;return fmtT(p[0])+'–'+fmtT(p[1]);}
     function getAMPM(val){if(!val||!val.trim())return ['',''];var segs=val.trim().split('/');if(segs.length>=2)return [segs[0].trim(),segs[1].trim()];var startH=parseFloat((val.split('-')[0]||'').replace(':','.'));if(!isNaN(startH)&&startH>=15)return ['',val.trim()];return [val.trim(),''];}
-    var ncW=80, dayW='calc((100% - '+ncW+'px) / '+bDays.length+')';
+    var ncW=72, dayW='calc((100% - '+ncW+'px) / '+bDays.length+')';
     var html='<div style="border-radius:10px;overflow:hidden;border:1px solid rgba(100,116,139,.4)"><table class="new-rtable"><thead><tr>'+
-      '<th style="width:'+ncW+'px;text-align:left;padding-left:10px;border-right:1px solid rgba(100,116,139,.4)">Staff</th>'+
+      '<th class="nh" style="width:'+ncW+'px">Staff</th>'+
       bDays.map(function(d,i){return '<th style="width:'+dayW+'">'+dayLbl[d]+'<br><span style="font-size:9px;color:#475569;font-weight:400">'+dayDates[i]+'</span></th>';}).join('')+
       '</tr></thead><tbody>';
     ['BOH','FOH'].forEach(function(pos){
       var posStaff=bStaff.filter(function(s){return s.position===pos;});
       if(!posStaff.length)return;
-      var chipCls=pos==='BOH'?'chip-boh':'chip-foh';
-      html+='<tr><td colspan="'+(bDays.length+1)+'" style="font-size:9px;font-weight:600;color:#64748b;letter-spacing:.8px;padding:5px 10px;background:#141e30;border-bottom:1px solid rgba(100,116,139,.2);border-right:none">'+pos+' — '+b+'</td></tr>';
+      var chipCol=pos==='BOH'?'cb':'cg';
+      html+='<tr class="slbl"><td colspan="'+(bDays.length+1)+'">'+pos+' — '+b+'</td></tr>';
       posStaff.forEach(function(s){
         var rows=roster.filter(function(r){return r.staff_id===s.id&&r.branch===b;});
         var row=rows.find(function(r){return r.shift_num===1;})||rows[0]||{};
         var row2=rows.find(function(r){return r.shift_num===2;})||{};
         html+='<tr>';
-        html+='<td style="text-align:left;padding-left:10px;font-size:12px;font-weight:600;color:#e2e8f0;background:#141e30;border-right:1px solid rgba(100,116,139,.4);vertical-align:middle">'+s.name.split(' ')[0]+'</td>';
+        html+='<td class="nc">'+s.name.split(' ')[0]+'</td>';
         bDays.forEach(function(d){
           var v1=(row[d]||'').trim(), v2=(row2[d]||'').trim();
           var val=v1&&v2&&v1.indexOf('/')<0?v1+'/'+v2:(v1||v2);
           var ampm=getAMPM(val);
-          html+='<td style="vertical-align:top">'+
-            '<div class="am-slot">'+(ampm[0]?'<span class="'+chipCls+'">'+fmtSeg(ampm[0])+'</span>':'')+'</div>'+
-            '<div class="pm-slot">'+(ampm[1]?'<span class="'+chipCls+'">'+fmtSeg(ampm[1])+'</span>':'')+'</div>'+
+          html+='<td>'+
+            '<div class="am-slot">'+(ampm[0]?'<span class="chip '+chipCol+'">'+fmtSeg(ampm[0])+'</span>':'')+'</div>'+
+            '<div class="pm-slot">'+(ampm[1]?'<span class="chip '+chipCol+'">'+fmtSeg(ampm[1])+'</span>':'')+'</div>'+
           '</td>';
         });
         html+='</tr>';
