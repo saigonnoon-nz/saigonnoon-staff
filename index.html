@@ -587,25 +587,33 @@ function setPLMode(m){
   loadPL();
 }
 const FIXED={CBD:{wk:415,sun:0},Rototuna:{wk:513,sun:513}};
-const CLOSE_TIME=20.5;
 const DOW_KEY=['sun','mon','tue','wed','thu','fri','sat'];
 
-function parseShiftTime(str){
+function getCloseHour(branch,day){
+  if(branch==='CBD') return day==='mon'?16:21;
+  if(['mon','tue','wed','thu'].includes(day)) return 20.5;
+  return day==='sun'?20:21;
+}
+function parseShiftTime(str,closeH){
   if(!str||!str.trim())return null;
   var s=str.trim().toLowerCase();
-  if(s==='closed')return CLOSE_TIME;
+  if(s==='closed')return closeH||20.5;
   var parts=s.replace(':','.').split('.');
   var h=parseInt(parts[0])||0;
   var m=parseInt((parts[1]||'0').padEnd(2,'0'))||0;
   return h+m/60;
 }
-function shiftHrs(shiftStr){
+function shiftHrs(shiftStr,closeH){
   if(!shiftStr||!shiftStr.trim())return 0;
-  var parts=shiftStr.split('-');
-  if(parts.length<2)return 0;
-  var s=parseShiftTime(parts[0]),e=parseShiftTime(parts[1]);
-  if(s===null||e===null)return 0;
-  return Math.max(0,e-s);
+  // handle split shifts joined with "/"
+  return shiftStr.split('/').reduce(function(tot,seg){
+    seg=seg.trim();
+    var p=seg.split('-');
+    if(p.length<2)return tot;
+    var s=parseShiftTime(p[0],closeH),e=parseShiftTime(p[1],closeH);
+    if(s===null||e===null)return tot;
+    return tot+Math.max(0,e-s);
+  },0);
 }
 function calcFixedR(b,s,e){
   var t=0;
@@ -621,9 +629,10 @@ function calcLabourFromRoster(staffList,rosterRows,b,start,end){
   for(var d=new Date(start);d<=new Date(end);d.setDate(d.getDate()+1)){
     if(b==='CBD'&&d.getDay()===0)continue;
     var dayKey=DOW_KEY[d.getDay()];
+    var closeH=getCloseHour(b,dayKey);
     bStaff.forEach(function(staff){
       rosterRows.filter(function(r){return r.staff_id===staff.id&&r.branch===b;}).forEach(function(row){
-        total+=shiftHrs(row[dayKey]||'')*(Number(staff.hourly_rate)||0);
+        total+=shiftHrs(row[dayKey]||'',closeH)*(Number(staff.hourly_rate)||0);
       });
     });
   }
