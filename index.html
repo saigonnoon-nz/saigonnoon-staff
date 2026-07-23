@@ -265,6 +265,10 @@
       <span class="nav-icon">🧾</span>
       <span class="nav-label">Invoice</span>
     </div>
+    <div class="nav-item" id="nav-bills" onclick="showTab('bills')">
+      <span class="nav-icon">📆</span>
+      <span class="nav-label">Bills</span>
+    </div>
     <div class="nav-item" id="nav-sales" onclick="showTab('sales')">
       <span class="nav-icon">💰</span>
       <span class="nav-label">Sales</span>
@@ -367,6 +371,24 @@
   </div><!-- end tab-invoice -->
 
   <!-- SALES TAB -->
+  <div id="tab-bills" style="display:none">
+    <div class="card">
+      <div class="card-title">📆 Bill Schedule</div>
+      <p style="font-size:12.5px;color:var(--muted2);margin:-4px 0 12px">Add a bill that's due so it shows in the owner's cash-flow plan.</p>
+      <label style="font-size:12px;color:var(--muted2);display:block;margin-bottom:4px">Due date</label>
+      <input id="sb_date" type="date" style="width:100%;background:var(--bg2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:12px;font-size:15px;margin-bottom:10px;box-sizing:border-box">
+      <label style="font-size:12px;color:var(--muted2);display:block;margin-bottom:4px">Bill name</label>
+      <input id="sb_name" type="text" placeholder="e.g. Bidfood, Rent, Insurance" style="width:100%;background:var(--bg2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:12px;font-size:15px;margin-bottom:10px;box-sizing:border-box">
+      <label style="font-size:12px;color:var(--muted2);display:block;margin-bottom:4px">Amount ($)</label>
+      <input id="sb_amt" type="number" step="0.01" inputmode="decimal" placeholder="0.00" style="width:100%;background:var(--bg2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:12px;font-size:15px;box-sizing:border-box">
+      <button class="btn" onclick="staffAddBill()">Add bill</button>
+      <div id="sbMsg" style="text-align:center;font-size:13px;color:var(--green);margin-top:10px;min-height:16px"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Upcoming bills</div>
+      <div id="sbList"><div style="color:var(--muted2);font-size:13px">Loading…</div></div>
+    </div>
+  </div>
   <div id="tab-sales" style="display:none">
     <div class="sales-sub-tabs">
       <div class="sstab active" id="ssEnter" onclick="setSalesSection('enter')">Enter Sales</div>
@@ -531,7 +553,26 @@ function setBranch(b){
 }
 
 // ── TABS ──────────────────────────────────────────────────────────────────────
-var ALL_TABS=['home','invoice','sales','history','roster'];
+var ALL_TABS=['home','invoice','bills','sales','history','roster'];
+async function renderStaffBills(){
+  var el=document.getElementById('sbList'); if(!el) return;
+  el.innerHTML='<div style="color:var(--muted2);font-size:13px">Loading…</div>';
+  try{
+    var bills=await sbSelect('upcoming_bills','paid=eq.false&order=date.asc');
+    if(!bills.length){ el.innerHTML='<div style="color:var(--muted2);font-size:13px">No upcoming bills yet.</div>'; return; }
+    el.innerHTML=bills.map(function(b){
+      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border)"><span style="font-size:13px;color:var(--text)"><b>'+b.date+'</b> · '+b.name+'</span><span style="display:flex;gap:14px;align-items:center"><span style="font-weight:700;color:var(--text)">$'+Number(b.amount).toLocaleString('en-NZ')+'</span><span onclick="staffDelBill(\''+b.id+'\')" style="color:var(--red);cursor:pointer;font-weight:800">✕</span></span></div>';
+    }).join('');
+  }catch(e){ el.innerHTML='<div style="color:var(--red);font-size:13px">Error: '+e.message+'</div>'; }
+}
+async function staffAddBill(){
+  var d=document.getElementById('sb_date').value, n=document.getElementById('sb_name').value.trim(), a=parseFloat(document.getElementById('sb_amt').value), msg=document.getElementById('sbMsg');
+  if(!d||!n||isNaN(a)){ msg.style.color='var(--red)'; msg.textContent='Enter date, name and amount'; return; }
+  msg.style.color='var(--muted2)'; msg.textContent='Saving…';
+  try{ await sbInsert('upcoming_bills',{date:d,name:n,amount:a,source:'staff'}); msg.style.color='var(--green)'; msg.textContent='✓ Bill added'; document.getElementById('sb_name').value=''; document.getElementById('sb_amt').value=''; renderStaffBills(); }
+  catch(e){ msg.style.color='var(--red)'; msg.textContent='Error: '+e.message; }
+}
+async function staffDelBill(id){ try{ await sbDelete('upcoming_bills',id); renderStaffBills(); }catch(e){} }
 function showTab(name){
   ALL_TABS.forEach(function(t){
     document.getElementById('tab-'+t).style.display=t===name?'block':'none';
@@ -549,6 +590,7 @@ function showTab(name){
   }
   if(name==='roster')loadRoster();
   if(name==='invoice'){document.getElementById('invHistBranch').textContent=branch;loadInvHistory();}
+  if(name==='bills'){var sd=document.getElementById('sb_date'); if(sd&&!sd.value) sd.value=new Date().toLocaleDateString('en-CA'); renderStaffBills();}
   if(name==='sales'){
     // Restore whichever sub-section was last active
     var activeSSTab=document.querySelector('.sstab.active');
